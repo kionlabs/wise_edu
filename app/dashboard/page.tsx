@@ -18,7 +18,8 @@ import {
   Sparkles,
   Play,
   ShieldCheck,
-  BarChart2
+  BarChart2,
+  Lock
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -211,14 +212,23 @@ export default function DashboardPage() {
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs divide-y divide-slate-100">
             {submissions.map((sub) => {
+              const matchedExam = exams.find((e) => e.id === sub.exam_id);
+              const isReleased = Boolean(matchedExam?.is_result_released);
               const isPass = sub.pass_status === 'PASS';
+
               return (
                 <div key={sub.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 hover:bg-slate-50/80 transition-colors">
                   <div className="flex items-start gap-4">
                     <div className={`p-3.5 rounded-2xl flex items-center justify-center shrink-0 ${
-                      isPass ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                      !isReleased 
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                        : isPass 
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                        : 'bg-rose-50 text-rose-600 border border-rose-200'
                     }`}>
-                      {isPass ? (
+                      {!isReleased ? (
+                        <Lock className="w-6 h-6 stroke-[2.2]" />
+                      ) : isPass ? (
                         <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
                       ) : (
                         <XCircle className="w-6 h-6 stroke-[2.2]" />
@@ -230,13 +240,19 @@ export default function DashboardPage() {
                         <h4 className="font-bold text-base text-slate-900">
                           {sub.exam_title || 'AICE Basic 모의고사'}
                         </h4>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide ${
-                          isPass 
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                            : 'bg-rose-100 text-rose-800 border border-rose-200'
-                        }`}>
-                          {isPass ? 'PASS (합격)' : 'FAIL (불합격)'}
-                        </span>
+                        {!isReleased ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                            <Lock className="w-3 h-3" /> 성적 공개 대기 중 (강의 진행)
+                          </span>
+                        ) : (
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide ${
+                            isPass 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                              : 'bg-rose-100 text-rose-800 border border-rose-200'
+                          }`}>
+                            {isPass ? 'PASS (합격)' : 'FAIL (불합격)'}
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
@@ -250,18 +266,35 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between sm:justify-end gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <div className="text-right">
                       <span className="text-[11px] text-slate-400 font-bold uppercase block">획득 점수</span>
-                      <span className="text-xl font-black text-slate-900">
-                        {sub.score} <span className="text-xs font-normal text-slate-500">/ {sub.total_score}점</span>
-                      </span>
+                      {!isReleased ? (
+                        <span className="text-xs font-extrabold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 inline-block">
+                          🔒 비공개 (강의 후 공개)
+                        </span>
+                      ) : (
+                        <span className="text-xl font-black text-slate-900">
+                          {sub.score} <span className="text-xs font-normal text-slate-500">/ {sub.total_score}점</span>
+                        </span>
+                      )}
                     </div>
 
-                    <Link
-                      href={`/result?id=${sub.id}`}
-                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-                    >
-                      <Award className="w-4 h-4 text-blue-600" />
-                      <span>채점 결과 보기</span>
-                    </Link>
+                    {!isReleased ? (
+                      <button
+                        type="button"
+                        onClick={() => alert('답안 제출이 완료되었습니다.\n강사님의 해설 강의 종료 후 관리자가 결과를 공개하면 채점 성적과 문항별 해설을 열람하실 수 있습니다.')}
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-purple-50 text-slate-500 hover:text-purple-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 border border-slate-200"
+                      >
+                        <Lock className="w-4 h-4 text-purple-600" />
+                        <span>결과 공개 대기 중</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/result?id=${sub.id}`}
+                        className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md shadow-purple-500/20"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>채점 결과 및 해설 보기</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               );

@@ -42,6 +42,7 @@ export default function ExamPage({ params }: ExamPageProps) {
   const [timeLeft, setTimeLeft] = useState<number>(60 * 60); // 60 minutes default
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSubmittedBlindModal, setIsSubmittedBlindModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Auth & Data Initialization
@@ -142,7 +143,8 @@ export default function ExamPage({ params }: ExamPageProps) {
       }));
     }
 
-    router.push(`/result?id=${savedSub.id}`);
+    setIsSubmitting(false);
+    setIsSubmittedBlindModal(true);
   };
 
   const handleAutoSubmit = () => {
@@ -518,6 +520,37 @@ export default function ExamPage({ params }: ExamPageProps) {
                 {isSubmitting ? '채점 및 저장 중...' : '확인 (최종 제출)'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submission Completed Modal (Blind Test Workflow) */}
+      {isSubmittedBlindModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-8 text-center space-y-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-12 h-12 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-black rounded-full border border-purple-200">
+                답안 제출 완료
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight pt-1">
+                답안 제출이 완료되었습니다! 🎉
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium pt-2">
+                제출하신 답안이 데이터베이스에 안전하게 등록되었습니다.<br />
+                <span className="font-extrabold text-purple-700">강사님의 해설 강의 후 채점 결과가 공개</span>되면 대시보드에서 본인의 성적과 문항별 정답/해설을 확인하실 수 있습니다.
+              </p>
+            </div>
+
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-purple-500/25 transition"
+            >
+              대시보드로 이동하기
+            </button>
           </div>
         </div>
       )}

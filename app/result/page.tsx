@@ -3,8 +3,8 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { fetchAllSubmissions, fetchProblemsByExamId } from '@/lib/supabase';
-import { Submission, Problem } from '@/types/database';
+import { fetchAllSubmissions, fetchProblemsByExamId, fetchExamById } from '@/lib/supabase';
+import { Submission, Problem, Exam } from '@/types/database';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -14,7 +14,8 @@ import {
   Check, 
   X,
   BookOpen,
-  UserCheck
+  UserCheck,
+  Lock
 } from 'lucide-react';
 
 function ResultContent() {
@@ -24,30 +25,10 @@ function ResultContent() {
 
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [exam, setExam] = useState<Exam | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Try sessionStorage first for immediate view
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('latest_submission');
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (!submissionId || parsed.id === submissionId) {
-            setSubmission(parsed);
-            if (parsed.problems) {
-              setProblems(parsed.problems);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-
-    // 2. Fetch from DB if not in sessionStorage
     async function loadSubmission() {
       setLoading(true);
       const allSubs = await fetchAllSubmissions();
@@ -55,8 +36,12 @@ function ResultContent() {
 
       if (found) {
         setSubmission(found);
-        const probList = await fetchProblemsByExamId(found.exam_id);
+        const [probList, examData] = await Promise.all([
+          fetchProblemsByExamId(found.exam_id),
+          fetchExamById(found.exam_id)
+        ]);
         setProblems(probList);
+        setExam(examData);
       }
       setLoading(false);
     }
@@ -68,8 +53,8 @@ function ResultContent() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-semibold text-slate-600">채점 결과를 분석하는 중입니다...</p>
+          <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-bold text-slate-600">시험 정보 및 제출 데이터를 로딩 중입니다...</p>
         </div>
       </div>
     );
@@ -80,8 +65,40 @@ function ResultContent() {
       <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 space-y-4">
         <HelpCircle className="w-12 h-12 text-slate-400 mx-auto" />
         <h2 className="text-lg font-bold text-slate-900">채점 결과 데이터를 찾을 수 없습니다.</h2>
-        <Link href="/dashboard" className="inline-block px-4 py-2 bg-blue-600 text-white font-bold rounded-xl text-xs">
+        <Link href="/dashboard" className="inline-block px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs">
           대시보드로 이동
+        </Link>
+      </div>
+    );
+  }
+
+  // Blind Check: Block viewing results if exam results are unreleased by admin
+  if (exam && !exam.is_result_released) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-10 text-center space-y-6 shadow-xl">
+        <div className="w-20 h-20 bg-purple-100 text-purple-700 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+          <Lock className="w-10 h-10 stroke-[2.2]" />
+        </div>
+
+        <div className="space-y-2">
+          <span className="px-3 py-1 bg-purple-50 text-purple-800 text-xs font-black rounded-full border border-purple-200">
+            🔒 성적 결과 비공개 (BLIND TEST)
+          </span>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight pt-1">
+            강사님의 해설 강의 진행 중
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium pt-1">
+            답안 제출이 안전하게 저장되었습니다.<br />
+            <span className="font-extrabold text-purple-700">강사님의 해설 강의 완료 후 관리자가 결과를 공개</span>하면 본인의 점수, 합격 여부, 상세 오답 노트를 열람하실 수 있습니다.
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard"
+          className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 transition"
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span>대시보드로 돌아가기</span>
         </Link>
       </div>
     );

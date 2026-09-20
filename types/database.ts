@@ -7,6 +7,7 @@ export interface Exam {
   pass_score: number;
   created_at: string;
   overview?: string;
+  is_result_released?: boolean;
 }
 
 export interface Problem {

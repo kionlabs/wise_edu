@@ -825,6 +825,7 @@ export async function updateExam(examId: string, examData: Partial<Exam>): Promi
       if (examData.total_questions !== undefined) payload.total_questions = examData.total_questions;
       if (examData.pass_score !== undefined) payload.pass_score = examData.pass_score;
       if (examData.overview !== undefined) payload.overview = examData.overview;
+      if (examData.is_result_released !== undefined) payload.is_result_released = examData.is_result_released;
 
       const { data, error } = await supabase
         .schema('aice')
@@ -851,6 +852,10 @@ export async function updateExam(examId: string, examData: Partial<Exam>): Promi
     return updated;
   }
   return null;
+}
+
+export async function toggleExamResultRelease(examId: string, released: boolean): Promise<Exam | null> {
+  return await updateExam(examId, { is_result_released: released });
 }
 
 function updateLocalExam(examId: string, updated: Exam) {

@@ -12,7 +12,8 @@ import {
   deleteProblem,
   bulkCreateProblems,
   uploadCsvDataset,
-  updateExamCsvUrl
+  updateExamCsvUrl,
+  toggleExamResultRelease
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -834,6 +835,34 @@ export default function AdminPage() {
                         <span className="font-bold text-emerald-600">{exPassRate}%</span>
                       </div>
                     </div>
+
+                    {/* Result Release Control Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const nextState = !ex.is_result_released;
+                        await toggleExamResultRelease(ex.id, nextState);
+                        const updatedExams = await fetchExams();
+                        setExams(updatedExams);
+                      }}
+                      className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition border shadow-2xs ${
+                        ex.is_result_released
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
+                      }`}
+                    >
+                      {ex.is_result_released ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>🟢 성적 결과 공개 완료 (학생 열람 가능)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 text-rose-600 shrink-0" />
+                          <span>🔒 성적 결과 비공개 중 (클릭하여 공개 전환)</span>
+                        </>
+                      )}
+                    </button>
 
                     <button
                       type="button"
