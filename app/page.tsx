@@ -69,9 +69,9 @@ export default function LoginPage() {
   };
 
   const fillDemoStudent = () => {
-    setSchool('남원용성고');
-    setStudentId('1101');
-    setStudentName('김재영');
+    setSchool('테스트기관');
+    setStudentId('0011');
+    setStudentName('관리자');
     setError('');
   };
 
@@ -118,7 +118,7 @@ export default function LoginPage() {
               className="group inline-flex items-center gap-2 py-2 px-4 bg-slate-100/80 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-full text-xs font-semibold shadow-xs transition-all duration-200 active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500 group-hover:rotate-12 transition-transform" />
-              <span>남원용성고 1101 김재영 자동 입력하기</span>
+              <span>🧪 테스트 계정으로 자동 입력</span>
             </button>
           </div>
 
@@ -213,11 +213,11 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-slate-100 grid grid-cols-2 gap-3 text-center text-[11px] text-slate-500 font-medium">
             <div className="flex items-center justify-center gap-1.5 bg-slate-50 py-2 px-3 rounded-xl">
               <Clock className="w-3.5 h-3.5 text-blue-600" />
-              <span>60분 타이머 포함</span>
+              <span>실시간 카운트다운 타이머</span>
             </div>
             <div className="flex items-center justify-center gap-1.5 bg-slate-50 py-2 px-3 rounded-xl">
-              <BookCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>aice.aice_students 연동</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>🔒 안전한 수험생 인증 시스템</span>
             </div>
           </div>
 

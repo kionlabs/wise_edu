@@ -63,6 +63,7 @@ export const clearStoredSession = () => {
 // 남원용성고등학교 특강 수강생 30명 시드 및 Mock 목록
 // -------------------------------------------------------------
 export const MOCK_STUDENTS: Student[] = [
+  { school: '테스트기관', student_id: '0011', student_name: '관리자' },
   { school: '한국고등학교', student_id: '20260101', student_name: '홍길동' },
   { school: '남원용성고', student_id: '1101', student_name: '김재영' },
   { school: '남원용성고', student_id: '1103', student_name: '안아람' },
