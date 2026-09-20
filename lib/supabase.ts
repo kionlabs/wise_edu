@@ -226,6 +226,40 @@ const MOCK_EXAMS: Exam[] = [
 - sellingprice: 자동차 거래 가격
 - body_type: 차체 유형
 - color_group: 색상 계열`
+  },
+  {
+    id: 'c3333333-3333-3333-3333-333333333333',
+    title: 'AICE Basic 연습문제: 심장병 예측',
+    description: '심장병 환자 데이터를 기반으로 환자의 심장병 여부를 예측하는 AI 모델 구현 연습문제 (15문항)',
+    time_limit_minutes: 60,
+    total_questions: 15,
+    pass_score: 70,
+    created_at: new Date().toISOString(),
+    is_result_released: false,
+    overview: `[AICE Basic 연습문제: 심장병 예측 (문제지)]
+
+■ 주제: 심장병 예측
+
+■ 배경:
+최근에는 생활 습관 변화와 스트레스 증가로 인해 연령과 관계없이 심장병 위험을 가진 사람들이 늘어나고 있습니다. 이에 따라 심장병을 조기에 발견하고 예방하는 것이 더욱 중요해지고 있습니다. 심장병은 혈압, 콜레스테롤, 심박수 등 여러 요인이 복합적으로 작용해 발생하기 때문에 단순한 기준만으로 위험 여부를 판단하기 어렵습니다. 만약 과거 환자 데이터를 기반으로 심장병 발생 가능성을 미리 예측할 수 있다면, 고위험 환자를 조기에 발견하고 예방적 치료를 보다 효과적으로 진행할 수 있을 것입니다.
+이를 위해 데이터 분석과 머신러닝 모델을 활용하여 환자의 다양한 건강 지표를 종합적으로 고려해 심장병 여부를 예측해보고자 합니다.
+
+■ 과제명:
+심장병 환자 데이터를 기반으로 환자의 심장병 여부를 예측하는 AI 모델을 구현해보세요.
+
+■ 데이터 컬럼명:
+- Age: 환자의 나이
+- Sex: 환자의 성별
+- ChestPainType: 흉통 유형
+- RestingBP: 휴식 시 혈압
+- Cholesterol: 혈청 콜레스테롤
+- FastingBS: 공복 혈당 정상 여부
+- RestingECG: 휴식 심전도 결과
+- MaxHR: 최대 심박수
+- ExerciseAngina: 운동 유발 협심증
+- Oldpeak: ST 하강 정도
+- ST_Slope: ST 구간 기울기
+- HeartDisease: 심장병 레이블 (심장병 유: 1, 심장병 무: 0)`
   }
 ];
 
@@ -623,6 +657,195 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       answer: '13500',
       score: 20,
       explanation: '딥러닝 추론 모델을 통해 입력 조건으로 예측한 자동차 거래 가격 정수 수치입니다.'
+    }
+  ],
+  'c3333333-3333-3333-3333-333333333333': [
+    {
+      id: 'p301',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 1,
+      title: '알고리즘 유형 선택',
+      description: '본 과제 해결에 알맞은 알고리즘의 유형을 고르시오.',
+      category: 'AI 개념',
+      type: 'single',
+      options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
+      answer: '분류 모형',
+      score: 20,
+      explanation: '심장병 여부(1: 심장병 유, 0: 심장병 무)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
+    },
+    {
+      id: 'p302',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 2,
+      title: '타겟 변수 작성',
+      description: '본 과제의 타겟 변수를 적으세요.',
+      category: '데이터 이해',
+      type: 'text',
+      answer: 'HeartDisease',
+      score: 20,
+      explanation: '예측하고자 하는 목표 변수는 심장병 여부인 HeartDisease입니다.'
+    },
+    {
+      id: 'p303',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 3,
+      title: '수치형 변수 개수 파악',
+      description: '데이터 유형이 수치형(Numerical)인 변수의 개수를 작성하세요.',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '6',
+      score: 20,
+      explanation: 'Age, RestingBP, Cholesterol, FastingBS, MaxHR, Oldpeak 총 6개 수치형 변수입니다.'
+    },
+    {
+      id: 'p304',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 4,
+      title: '기술통계 지표 선택',
+      description: '수치형 변수의 중심 경향성을 파악하기 위해 사용하는 대표적인 지표 중 하나로, 데이터를 크기 순으로 정렬했을 때 가장 작은 값에 해당하는 것을 고르세요.',
+      category: '데이터 기술통계',
+      type: 'single',
+      options: ['최소값', '중위수', '표준편차', '제1분위수'],
+      answer: '최소값',
+      score: 20,
+      explanation: '데이터 정렬 시 가장 작은 위치의 값은 최소값(Min)입니다.'
+    },
+    {
+      id: 'p305',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 5,
+      title: '특정 변수 표준편차 계산',
+      description: '휴식 시 혈압(RestingBP) 변수의 표준편차를 소수점 아래 두 자리까지 작성하세요. (예: 00.00)',
+      category: '데이터 기술통계',
+      type: 'text',
+      answer: '22.11',
+      score: 20,
+      explanation: 'RestingBP 컬럼 데이터의 표준편차 계산 결과입니다.'
+    },
+    {
+      id: 'p306',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 6,
+      title: '특정 조건 데이터 개수 구하기',
+      description: '휴식 시 혈압(RestingBP)이 170 이상인 환자의 수를 작성하세요.',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '18',
+      score: 20,
+      explanation: 'RestingBP >= 170 조건을 만족하는 데이터의 총 개수는 18개입니다.'
+    },
+    {
+      id: 'p307',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 7,
+      title: '왜도(Skewness) 최대 변수 선택',
+      description: '다음 수치형 변수 중 왜도(Skewness) 값이 가장 큰 변수를 고르세요.',
+      category: '데이터 기술통계',
+      type: 'single',
+      options: ['Age', 'MaxHR', 'Oldpeak', 'RestingBP'],
+      answer: 'RestingBP',
+      score: 20,
+      explanation: '제시된 변수들 중 분포의 비대칭도(왜도)가 가장 높은 변수는 RestingBP입니다.'
+    },
+    {
+      id: 'p308',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 8,
+      title: '흉통 유형(ChestPainType) 최빈값 탐색',
+      description: '흉통 유형(ChestPainType) 중 가장 빈도수가 적은(최솟값) 유형을 고르세요.',
+      category: '데이터 탐색',
+      type: 'single',
+      options: ['ATA', 'NAP', 'ASY', 'TA'],
+      answer: 'TA',
+      score: 20,
+      explanation: 'ChestPainType 변수의 카테고리 중 빈도수가 가장 적은 유형은 TA(Typical Angina)입니다.'
+    },
+    {
+      id: 'p309',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 9,
+      title: '결측치 포함 데이터 개수 파악',
+      description: '전체 데이터 중 결측치(Null/NaN)가 하나라도 포함된 행(Row)의 개수를 작성하세요.',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '12',
+      score: 20,
+      explanation: '결측치를 포함하는 전체 행의 개수는 12개입니다.'
+    },
+    {
+      id: 'p310',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 10,
+      title: '결측치 평균값 대체 및 평균 계산',
+      description: '수치형 변수의 결측치를 해당 변수의 평균값으로 대체한 후, 평균 처리된 혈청 콜레스테롤(Cholesterol)의 평균값을 소수점 둘째 자리까지 작성하세요. (예: 00.00)',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '50.11',
+      score: 20,
+      explanation: 'Cholesterol 결측치를 평균으로 대체 후 산출된 전체 평균 수치입니다.'
+    },
+    {
+      id: 'p311',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 11,
+      title: 'Min-Max 스케일링 후 값 작성',
+      description: '최대-최소 스케일링(Min-Max Scaling)을 적용한 후, 변환된 최대 심박수(MaxHR)의 최소값을 작성하세요.',
+      category: '피처 스케일링',
+      type: 'text',
+      answer: '0.18',
+      score: 20,
+      explanation: 'Min-Max 스케일링 적용 후 MaxHR 변수의 최소값 수치입니다.'
+    },
+    {
+      id: 'p312',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 12,
+      title: '머신러닝 모델 비교 (정확도 Accuracy 기준)',
+      description: '다음 머신러닝 분류 알고리즘 중 기본 파라미터 상태에서 교차 검증 정확도(Accuracy)가 가장 높게 나타나는 모델을 고르세요.',
+      category: '머신러닝 평가',
+      type: 'single',
+      options: ['KNN', 'Decision Tree', 'Random Forest'],
+      answer: 'Random Forest',
+      score: 20,
+      explanation: 'Random Forest 분류기가 교차 검증 정확도에서 가장 뛰어난 성능을 보입니다.'
+    },
+    {
+      id: 'p313',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 13,
+      title: '최고 성능 모델 AUC-ROC 수치 작성',
+      description: '문제 12번에서 선택한 최고 성능 머신러닝 모델의 AUC-ROC 점수를 반올림하여 소수점 네 자리까지 작성하세요. (예: 0.0000)',
+      category: '머신러닝 평가',
+      type: 'text',
+      answer: '0.8696',
+      score: 20,
+      explanation: 'Random Forest 모델의 test 데이터셋 기준 AUC-ROC 수치입니다.'
+    },
+    {
+      id: 'p314',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 14,
+      title: '특성 중요도(Feature Importance) 최상위 변수 선택',
+      description: '학습된 머신러닝 모델의 특성 중요도(Feature Importance)를 분석했을 때, 심장병 예측에 가장 중요한 영향을 미치지 않는(상위 3개 외) 변수를 고르세요.',
+      category: '모델 해석',
+      type: 'single',
+      options: ['Oldpeak', 'MaxHR', 'RestingECG', 'ChestPainType'],
+      answer: 'RestingECG',
+      score: 20,
+      explanation: '상위 중요 변수(Oldpeak, MaxHR, ChestPainType)에 비해 RestingECG의 영향도가 상대적으로 낮습니다.'
+    },
+    {
+      id: 'p315',
+      exam_id: 'c3333333-3333-3333-3333-333333333333',
+      order_num: 15,
+      title: '신규 환자 데이터 기반 심장병 예측 추론',
+      description: '최종 선택된 모델을 사용하여 다음 조건을 가진 신규 환자의 심장병 유무 예측 결과를 고르세요.\n- Age: 55, Sex: M, ChestPainType: ASY, RestingBP: 140, Cholesterol: 240, FastingBS: 1, MaxHR: 130, ExerciseAngina: Y, Oldpeak: 1.5, ST_Slope: Flat',
+      category: '모델 추론',
+      type: 'single',
+      options: ['0: 심장병 없음', '1: 심장병 있음'],
+      answer: '1: 심장병 있음',
+      score: 20,
+      explanation: '지정된 신규 환자 특성을 입력하여 예측된 결과는 1(심장병 있음)입니다.'
     }
   ]
 };
