@@ -13,7 +13,8 @@ import {
   bulkCreateProblems,
   uploadCsvDataset,
   updateExamCsvUrl,
-  toggleExamResultRelease
+  toggleExamResultRelease,
+  checkAnswerCorrect
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -177,6 +178,19 @@ export default function AdminPage() {
   const [newModalProbAnswer, setNewModalProbAnswer] = useState<string>('');
   const [newModalProbScore, setNewModalProbScore] = useState<number>(20);
   const [newModalProbExplanation, setNewModalProbExplanation] = useState<string>('');
+
+  // Student Submission Answer Details Modal State
+  const [selectedSubModal, setSelectedSubModal] = useState<Submission | null>(null);
+  const [subModalProblems, setSubModalProblems] = useState<Problem[]>([]);
+  const [isSubModalLoading, setIsSubModalLoading] = useState<boolean>(false);
+
+  const handleOpenSubmissionModal = async (sub: Submission) => {
+    setSelectedSubModal(sub);
+    setIsSubModalLoading(true);
+    const probList = await fetchProblemsByExamId(sub.exam_id);
+    setSubModalProblems(probList);
+    setIsSubModalLoading(false);
+  };
 
   // Helper: Open Preview Modal
   const handleOpenPreviewModal = async (exam: Exam) => {
@@ -1087,11 +1101,30 @@ export default function AdminPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs text-slate-800">
                       {filteredSubmissions.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-slate-50/80 transition">
+                        <tr key={sub.id} className="hover:bg-purple-50/50 transition">
                           <td className="py-4 px-5 font-bold text-slate-900">{sub.school}</td>
                           <td className="py-4 px-5 font-mono text-slate-600">{sub.student_id}</td>
-                          <td className="py-4 px-5 font-bold text-blue-700">{sub.student_name}</td>
-                          <td className="py-4 px-5 font-semibold text-slate-700">{sub.exam_title || 'AICE Basic 모의고사'}</td>
+                          <td className="py-4 px-5 font-bold">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSubmissionModal(sub)}
+                              className="text-blue-700 hover:text-purple-700 hover:underline font-bold flex items-center gap-1.5 group transition"
+                              title="학생 제출 답안 상세 보기 모달 열기"
+                            >
+                              <span>{sub.student_name}</span>
+                              <Eye className="w-3.5 h-3.5 text-blue-400 group-hover:text-purple-600 transition" />
+                            </button>
+                          </td>
+                          <td className="py-4 px-5 font-semibold text-slate-700">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSubmissionModal(sub)}
+                              className="hover:underline hover:text-purple-700 text-left line-clamp-1 font-semibold transition"
+                              title="학생 제출 답안 상세 보기 모달 열기"
+                            >
+                              {sub.exam_title || 'AICE Basic 모의고사'}
+                            </button>
+                          </td>
                           <td className="py-4 px-5 text-center font-black text-sm">
                             {sub.score} <span className="text-[11px] text-slate-400 font-normal">/ {sub.total_score}점</span>
                           </td>
@@ -1115,7 +1148,18 @@ export default function AdminPage() {
                             </span>
                           </td>
                           <td className="py-4 px-5 text-slate-500 text-[11px]">
-                            {new Date(sub.submitted_at).toLocaleString('ko-KR')}
+                            <div className="flex items-center justify-between gap-2">
+                              <span>{new Date(sub.submitted_at).toLocaleString('ko-KR')}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSubmissionModal(sub)}
+                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-extrabold rounded-lg border border-purple-200 flex items-center gap-1 transition shrink-0 shadow-2xs"
+                                title="제출 답안 상세 보기"
+                              >
+                                <Eye className="w-3 h-3 text-purple-600" />
+                                <span>답안 상세</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2262,6 +2306,235 @@ export default function AdminPage() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Submission Answer Details Modal */}
+      {selectedSubModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-400/30 text-xs font-bold rounded-md">
+                    📝 학생 제출 답안 상세 보기
+                  </span>
+                  <span className={`px-2.5 py-0.5 text-xs font-black rounded-md border ${
+                    selectedSubModal.pass_status === 'PASS'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+                  }`}>
+                    {selectedSubModal.pass_status === 'PASS' ? '합격 (PASS)' : '불합격 (FAIL)'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white tracking-tight">
+                  {selectedSubModal.school} - {selectedSubModal.student_name} ({selectedSubModal.student_id})
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSubModal(null)}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Student Summary Banner */}
+            <div className="bg-slate-100 p-5 border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs shrink-0">
+              <div>
+                <span className="text-slate-500 font-bold block text-[10px] uppercase">소속 (학교/기관)</span>
+                <span className="font-extrabold text-slate-900 text-sm">{selectedSubModal.school}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-bold block text-[10px] uppercase">학번 / 학생 이름</span>
+                <span className="font-extrabold text-slate-900 text-sm">{selectedSubModal.student_id} | {selectedSubModal.student_name}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-bold block text-[10px] uppercase">응시 회차</span>
+                <span className="font-extrabold text-slate-900 text-sm line-clamp-1">{selectedSubModal.exam_title || 'AICE Basic 모의고사'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-bold block text-[10px] uppercase">획득 점수 / 제출 일시</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-purple-700 text-base">{selectedSubModal.score}점</span>
+                  <span className="text-slate-500 text-[11px]">({new Date(selectedSubModal.submitted_at).toLocaleString('ko-KR')})</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Problem List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+              {isSubModalLoading ? (
+                <div className="py-16 text-center text-slate-500 space-y-2">
+                  <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs font-semibold">학생 제출 답안 리스트를 불러오는 중입니다...</p>
+                </div>
+              ) : subModalProblems.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 font-bold">
+                  문항 정보를 불러올 수 없습니다.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {subModalProblems.map((prob) => {
+                    const userAns = selectedSubModal.answers[prob.id] || '(미제출)';
+                    const correctAns = prob.answer || '';
+                    const isCorrect = checkAnswerCorrect(userAns, correctAns, prob);
+
+                    return (
+                      <div
+                        key={prob.id}
+                        className={`p-5 bg-white rounded-2xl border shadow-xs space-y-3.5 transition ${
+                          isCorrect ? 'border-emerald-200/90' : 'border-rose-200/90'
+                        }`}
+                      >
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-7 h-7 font-black text-xs rounded-lg flex items-center justify-center text-white ${
+                              isCorrect ? 'bg-emerald-600' : 'bg-rose-600'
+                            }`}>
+                              Q{prob.order_num}
+                            </span>
+                            <span className="font-extrabold text-xs text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200">
+                              {prob.category}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                              {prob.type === 'single' ? '객관식' : '단답형'}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-400">
+                              ({prob.score}점)
+                            </span>
+                          </div>
+
+                          <span className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 ${
+                            isCorrect 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                              : 'bg-rose-100 text-rose-800 border border-rose-300'
+                          }`}>
+                            {isCorrect ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>정답 (O)</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-4 h-4 text-rose-600" />
+                                <span>오답 (X)</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Question Title */}
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900 leading-snug">{prob.title}</h4>
+                          {prob.description && (
+                            <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
+                              {prob.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Answer Comparison Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div className={`p-3 rounded-xl border ${
+                            isCorrect 
+                              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' 
+                              : 'bg-rose-50/70 border-rose-200 text-rose-950'
+                          }`}>
+                            <span className="font-black text-[10px] uppercase block mb-0.5 text-slate-500">
+                              🙋‍♂️ 학생 제출 답안 (User Answer)
+                            </span>
+                            <span className="font-extrabold text-sm tracking-tight break-all">
+                              {userAns}
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-emerald-50/90 border border-emerald-300 text-emerald-950 rounded-xl">
+                            <span className="font-black text-[10px] uppercase block mb-0.5 text-emerald-800">
+                              🎯 실제 정답 (Correct Answer)
+                            </span>
+                            <span className="font-extrabold text-sm tracking-tight text-emerald-900 break-all">
+                              {correctAns}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Options list if single choice */}
+                        {prob.type === 'single' && prob.options && prob.options.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                            {prob.options.map((opt, oIdx) => {
+                              const isUserChoice = String(userAns).trim() === String(opt).trim();
+                              const isActualCorrect = String(correctAns).trim() === String(opt).trim();
+
+                              return (
+                                <div
+                                  key={oIdx}
+                                  className={`p-2 rounded-xl text-xs font-medium border flex items-center justify-between ${
+                                    isActualCorrect
+                                      ? 'bg-emerald-100/80 border-emerald-400 text-emerald-950 font-bold'
+                                      : isUserChoice
+                                      ? 'bg-rose-100/80 border-rose-400 text-rose-950 font-bold'
+                                      : 'bg-slate-50 border-slate-200 text-slate-600'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 truncate">
+                                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                      isActualCorrect 
+                                        ? 'bg-emerald-600 text-white' 
+                                        : isUserChoice 
+                                        ? 'bg-rose-600 text-white' 
+                                        : 'bg-slate-200 text-slate-600'
+                                    }`}>
+                                      {oIdx + 1}
+                                    </span>
+                                    <span className="truncate">{opt}</span>
+                                  </div>
+
+                                  {isActualCorrect && (
+                                    <span className="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded ml-2 shrink-0">
+                                      정답
+                                    </span>
+                                  )}
+                                  {isUserChoice && !isActualCorrect && (
+                                    <span className="text-[10px] bg-rose-600 text-white font-black px-2 py-0.5 rounded ml-2 shrink-0">
+                                      학생 선택
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {prob.explanation && (
+                          <div className="p-3 bg-slate-100/80 rounded-xl border border-slate-200/80 text-xs">
+                            <span className="font-extrabold text-slate-700 block text-[10px] uppercase mb-0.5">💡 문제 해설</span>
+                            <p className="text-slate-600 leading-relaxed font-medium">{prob.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-900 border-t border-slate-800 flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedSubModal(null)}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
+              >
+                닫기 (Close)
+              </button>
             </div>
           </div>
         </div>
