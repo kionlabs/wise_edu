@@ -168,11 +168,29 @@ const MOCK_EXAMS: Exam[] = [
     total_questions: 15,
     pass_score: 70,
     created_at: new Date().toISOString(),
-    overview: `[시험 문제 개요]
-• 주제: 퇴사여부 예측
-• 배경: 최근에는 조직 문화, 업무 강도, 보상 수준 등 다양한 요인으로 인해 직원의 퇴사 가능성을 미리 파악하는 것이 중요해지고 있습니다. 퇴사 위험이 높은 직원을 사전에 예측하고 적절한 조치를 취함으로 인적 자원 손실을 줄이고 조직의 안정성을 높일 수 있습니다.
-• 과제명: 인사 데이터를 기반으로 직원의 퇴사여부를 예측하는 AI 모델을 구현해보세요.
-• 데이터 컬럼명: Age, Attrition, Department, DistanceFromHome, Education, Gender, JobInvolvement, JobRole, JobSatisfaction, MonthlyRate, OverTime`
+    overview: `[AICE Basic 모의고사: 퇴사여부 예측 (문제지)]
+
+■ 주제: 퇴사여부 예측
+
+■ 배경:
+최근에는 조직 문화, 업무 강도, 보상 수준 등 다양한 요인으로 인해 직원의 퇴사 가능성을 미리 파악하는 것이 중요해지고 있습니다. 직원의 퇴사는 개인의 만족도뿐만 아니라 근속 기간, 업무 환경, 직무 역할, 성과 등 여러 요인이 복합적으로 작용해 발생하기 때문에 단순한 기준만으로 판단하기 어렵습니다. 만약 과거 직원 데이터를 기반으로 퇴사 가능성을 미리 예측할 수 있다면, 퇴사 위험이 높은 직원을 조기에 파악하고 인사 관리와 조직 운영을 보다 효과적으로 진행할 수 있을 것입니다.
+이를 위해 데이터 분석과 머신러닝 모델을 활용하여 직원의 다양한 근무 지표를 종합적으로 고려해 퇴사 여부를 예측하고자 합니다.
+
+■ 과제명:
+인사 데이터를 기반으로 직원의 퇴사여부를 예측하는 AI 모델을 구현해보세요.
+
+■ 데이터 컬럼명:
+- Age: 연령
+- Attrition: 퇴사 여부 (1: 퇴사, 0: 퇴사하지 않음)
+- Department: 근무 부서
+- DistanceFromHome: 집과의 거리
+- Education: 교육 수준
+- Gender: 성별
+- JobInvolvement: 직무 참여도
+- JobRole: 직무 역할
+- JobSatisfaction: 직무 만족도
+- MonthlyRate: 월급
+- OverTime: 야근 여부`
   },
   {
     id: 'b2222222-2222-2222-2222-222222222222',
@@ -494,9 +512,10 @@ function getLocalExams(): Exam[] {
     custom.forEach(e => {
       if (e && e.id) {
         const mock = MOCK_EXAMS.find(m => m.id === e.id);
+        const useOverview = (e.overview && e.overview.length >= 300) ? e.overview : (mock?.overview || e.overview);
         const merged: Exam = {
           ...e,
-          overview: e.overview || mock?.overview
+          overview: useOverview
         };
         examMap.set(e.id, merged);
       }
@@ -581,9 +600,10 @@ export async function fetchExams(): Promise<Exam[]> {
         const uniqueMap = new Map<string, Exam>();
         data.forEach((item: any) => {
           const mock = MOCK_EXAMS.find(m => m.id === item.id);
+          const useOverview = (item.overview && item.overview.length >= 300) ? item.overview : (mock?.overview || item.overview);
           const examObj: Exam = {
             ...item,
-            overview: item.overview || mock?.overview
+            overview: useOverview
           };
           uniqueMap.set(item.id, examObj);
         });
@@ -643,9 +663,10 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
         .single();
       if (!error && data) {
         const mock = MOCK_EXAMS.find(m => m.id === data.id);
+        const useOverview = (data.overview && data.overview.length >= 300) ? data.overview : (mock?.overview || data.overview);
         return {
           ...data,
-          overview: data.overview || mock?.overview
+          overview: useOverview
         } as Exam;
       }
     } catch (e) {
