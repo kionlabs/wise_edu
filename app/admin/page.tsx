@@ -8,6 +8,8 @@ import {
   updateExam, 
   fetchProblemsByExamId, 
   createProblem,
+  updateProblem,
+  deleteProblem,
   bulkCreateProblems,
   uploadCsvDataset,
   updateExamCsvUrl
@@ -38,7 +40,14 @@ import {
   Clock,
   Sparkles,
   Pencil,
-  FileEdit
+  FileEdit,
+  Eye,
+  Trash2,
+  X,
+  Edit2,
+  Save,
+  ListChecks,
+  PlusCircle
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -127,6 +136,153 @@ export default function AdminPage() {
   const [probExplanation, setProbExplanation] = useState('');
   const [isCreatingProblem, setIsCreatingProblem] = useState(false);
   const [probMsg, setProbMsg] = useState('');
+
+  // Preview Modal & Inline Problem CRUD State
+  const [previewExamModal, setPreviewExamModal] = useState<Exam | null>(null);
+  const [previewProblems, setPreviewProblems] = useState<Problem[]>([]);
+  const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
+  const [editingProbId, setEditingProbId] = useState<string | null>(null);
+  const [editProbOrderNum, setEditProbOrderNum] = useState<number>(1);
+  const [editProbCategory, setEditProbCategory] = useState<string>('');
+  const [editProbTitle, setEditProbTitle] = useState<string>('');
+  const [editProbDesc, setEditProbDesc] = useState<string>('');
+  const [editProbType, setEditProbType] = useState<'single' | 'text' | 'multiple'>('single');
+  const [editOpt1, setEditOpt1] = useState<string>('');
+  const [editOpt2, setEditOpt2] = useState<string>('');
+  const [editOpt3, setEditOpt3] = useState<string>('');
+  const [editOpt4, setEditOpt4] = useState<string>('');
+  const [editProbAnswer, setEditProbAnswer] = useState<string>('');
+  const [editProbScore, setEditProbScore] = useState<number>(20);
+  const [editProbExplanation, setEditProbExplanation] = useState<string>('');
+  const [modalMsg, setModalMsg] = useState<string>('');
+
+  // Add single problem inside modal toggle & form state
+  const [showAddInModal, setShowAddInModal] = useState<boolean>(false);
+  const [newModalProbOrder, setNewModalProbOrder] = useState<number>(1);
+  const [newModalProbCategory, setNewModalProbCategory] = useState<string>('데이터 전처리');
+  const [newModalProbTitle, setNewModalProbTitle] = useState<string>('');
+  const [newModalProbDesc, setNewModalProbDesc] = useState<string>('');
+  const [newModalProbType, setNewModalProbType] = useState<'single' | 'text' | 'multiple'>('single');
+  const [newModalOpt1, setNewModalOpt1] = useState<string>('');
+  const [newModalOpt2, setNewModalOpt2] = useState<string>('');
+  const [newModalOpt3, setNewModalOpt3] = useState<string>('');
+  const [newModalOpt4, setNewModalOpt4] = useState<string>('');
+  const [newModalProbAnswer, setNewModalProbAnswer] = useState<string>('');
+  const [newModalProbScore, setNewModalProbScore] = useState<number>(20);
+  const [newModalProbExplanation, setNewModalProbExplanation] = useState<string>('');
+
+  // Helper: Open Preview Modal
+  const handleOpenPreviewModal = async (exam: Exam) => {
+    setPreviewExamModal(exam);
+    setIsPreviewLoading(true);
+    setModalMsg('');
+    setShowAddInModal(false);
+    setEditingProbId(null);
+
+    const probList = await fetchProblemsByExamId(exam.id);
+    setPreviewProblems(probList);
+    setNewModalProbOrder(probList.length + 1);
+    setIsPreviewLoading(false);
+  };
+
+  // Helper: Start editing a problem inline inside modal
+  const handleStartEditProb = (p: Problem) => {
+    setEditingProbId(p.id);
+    setEditProbOrderNum(p.order_num);
+    setEditProbCategory(p.category || '데이터 전처리');
+    setEditProbTitle(p.title || '');
+    setEditProbDesc(p.description || '');
+    setEditProbType(p.type || 'single');
+    setEditOpt1(p.options?.[0] || '');
+    setEditOpt2(p.options?.[1] || '');
+    setEditOpt3(p.options?.[2] || '');
+    setEditOpt4(p.options?.[3] || '');
+    setEditProbAnswer(p.answer || '');
+    setEditProbScore(p.score || 20);
+    setEditProbExplanation(p.explanation || '');
+    setModalMsg('');
+  };
+
+  // Helper: Save edited problem
+  const handleSaveEditedProb = async (p: Problem) => {
+    if (!editProbTitle.trim() || !editProbAnswer.trim()) {
+      setModalMsg('문제 제목과 정답을 입력해 주세요.');
+      return;
+    }
+
+    const optionsArray = editProbType === 'single' ? [editOpt1, editOpt2, editOpt3, editOpt4].filter(Boolean) : undefined;
+
+    const res = await updateProblem(p.id, {
+      exam_id: p.exam_id,
+      order_num: editProbOrderNum,
+      category: editProbCategory.trim(),
+      title: editProbTitle.trim(),
+      description: editProbDesc.trim(),
+      type: editProbType,
+      options: optionsArray,
+      answer: editProbAnswer.trim(),
+      score: editProbScore,
+      explanation: editProbExplanation.trim()
+    });
+
+    if (res) {
+      setModalMsg(`Q${res.order_num} 문항 수정이 성공적으로 저장되었습니다!`);
+      setEditingProbId(null);
+      const updatedList = await fetchProblemsByExamId(p.exam_id);
+      setPreviewProblems(updatedList);
+    }
+  };
+
+  // Helper: Delete single problem
+  const handleDeleteProb = async (problemId: string, orderNum: number) => {
+    if (!previewExamModal) return;
+    if (!confirm(`Q${orderNum} 문항을 정말로 삭제하시겠습니까?`)) return;
+
+    await deleteProblem(problemId, previewExamModal.id);
+    setModalMsg(`Q${orderNum} 문항이 삭제되었습니다.`);
+    const updatedList = await fetchProblemsByExamId(previewExamModal.id);
+    setPreviewProblems(updatedList);
+    setNewModalProbOrder(updatedList.length + 1);
+  };
+
+  // Helper: Add single problem inside modal
+  const handleAddModalSingleProblem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!previewExamModal) return;
+    if (!newModalProbTitle.trim() || !newModalProbAnswer.trim()) {
+      setModalMsg('문제 제목과 정답을 입력해 주세요.');
+      return;
+    }
+
+    const optionsArray = newModalProbType === 'single' ? [newModalOpt1, newModalOpt2, newModalOpt3, newModalOpt4].filter(Boolean) : undefined;
+
+    const created = await createProblem({
+      exam_id: previewExamModal.id,
+      order_num: newModalProbOrder,
+      category: newModalProbCategory.trim(),
+      title: newModalProbTitle.trim(),
+      description: newModalProbDesc.trim(),
+      type: newModalProbType,
+      options: optionsArray,
+      answer: newModalProbAnswer.trim(),
+      score: newModalProbScore,
+      explanation: newModalProbExplanation.trim()
+    });
+
+    setModalMsg(`신규 Q${created.order_num} 문항이 성공적으로 추가되었습니다!`);
+    setShowAddInModal(false);
+    
+    // Reset new form
+    setNewModalProbTitle('');
+    setNewModalProbDesc('');
+    setNewModalOpt1(''); setNewModalOpt2(''); setNewModalOpt3(''); setNewModalOpt4('');
+    setNewModalProbAnswer('');
+    setNewModalProbExplanation('');
+
+    const updatedList = await fetchProblemsByExamId(previewExamModal.id);
+    setPreviewProblems(updatedList);
+    setNewModalProbOrder(updatedList.length + 1);
+  };
 
   // Form 3: Bulk Upload & CSV Upload State
   const [bulkTargetExamId, setBulkTargetExamId] = useState<string>('');
@@ -671,6 +827,15 @@ export default function AdminPage() {
                         <span className="font-bold text-emerald-600">{exPassRate}%</span>
                       </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPreviewModal(ex)}
+                      className="w-full py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs rounded-xl border border-purple-200 flex items-center justify-center gap-1.5 transition shadow-2xs"
+                    >
+                      <Eye className="w-4 h-4 text-purple-600" />
+                      <span>문제 15문항 전체 미리보기 및 수정</span>
+                    </button>
                   </div>
                 );
               })}
@@ -1441,6 +1606,475 @@ export default function AdminPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXAM PROBLEMS PREVIEW & INLINE CRUD MODAL */}
+      {previewExamModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-400/30 text-xs font-bold rounded-md">
+                    회차 문항 전체 검증 및 관리 모달
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    총 {previewProblems.length}개 등록됨
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-purple-400" />
+                  {previewExamModal.title}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddInModal((prev) => !prev)}
+                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>{showAddInModal ? '추가 입력 닫기' : '신규 문항 1개 추가'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreviewExamModal(null)}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Notification Bar inside Modal */}
+            {modalMsg && (
+              <div className={`px-6 py-3 text-xs font-extrabold flex items-center justify-between border-b ${
+                modalMsg.includes('오류') || modalMsg.includes('입력해')
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              }`}>
+                <span>{modalMsg}</span>
+                <button onClick={() => setModalMsg('')} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Single Problem Creation Form inside Modal (Collapsible) */}
+            {showAddInModal && (
+              <form onSubmit={handleAddModalSingleProblem} className="p-5 bg-purple-50/80 border-b border-purple-200 space-y-4 shrink-0">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-sm text-purple-900 flex items-center gap-1.5">
+                    <PlusCircle className="w-4 h-4 text-purple-600" />
+                    새로운 문제 추가 등록 Form
+                  </h4>
+                  <span className="text-xs font-bold text-purple-700">Q{newModalProbOrder} 번 문항으로 등록됩니다</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 순서</label>
+                    <input
+                      type="number"
+                      value={newModalProbOrder}
+                      onChange={(e) => setNewModalProbOrder(Number(e.target.value))}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">카테고리</label>
+                    <input
+                      type="text"
+                      value={newModalProbCategory}
+                      onChange={(e) => setNewModalProbCategory(e.target.value)}
+                      placeholder="데이터 전처리"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 유형</label>
+                    <select
+                      value={newModalProbType}
+                      onChange={(e) => setNewModalProbType(e.target.value as 'single' | 'text')}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
+                    >
+                      <option value="single">객관식 (Single Choice)</option>
+                      <option value="text">단답형 (Text Input)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">배점</label>
+                    <input
+                      type="number"
+                      value={newModalProbScore}
+                      onChange={(e) => setNewModalProbScore(Number(e.target.value))}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">문제 제목</label>
+                  <input
+                    type="text"
+                    value={newModalProbTitle}
+                    onChange={(e) => setNewModalProbTitle(e.target.value)}
+                    placeholder="예: 결측치 보정 알고리즘 탐구"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">문제 지문 / 내용</label>
+                  <textarea
+                    value={newModalProbDesc}
+                    onChange={(e) => setNewModalProbDesc(e.target.value)}
+                    placeholder="문제 설명 및 상세 지문을 입력하세요."
+                    rows={2}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs"
+                  />
+                </div>
+
+                {newModalProbType === 'single' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newModalOpt1}
+                      onChange={(e) => setNewModalOpt1(e.target.value)}
+                      placeholder="보기 1번"
+                      className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={newModalOpt2}
+                      onChange={(e) => setNewModalOpt2(e.target.value)}
+                      placeholder="보기 2번"
+                      className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={newModalOpt3}
+                      onChange={(e) => setNewModalOpt3(e.target.value)}
+                      placeholder="보기 3번"
+                      className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={newModalOpt4}
+                      onChange={(e) => setNewModalOpt4(e.target.value)}
+                      placeholder="보기 4번"
+                      className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">정답</label>
+                    <input
+                      type="text"
+                      value={newModalProbAnswer}
+                      onChange={(e) => setNewModalProbAnswer(e.target.value)}
+                      placeholder="정확한 보기 문구 또는 수치 입력"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-emerald-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">해설</label>
+                    <input
+                      type="text"
+                      value={newModalProbExplanation}
+                      onChange={(e) => setNewModalProbExplanation(e.target.value)}
+                      placeholder="문제 해설 입력"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddInModal(false)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>문항 등록 완료</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+              {isPreviewLoading ? (
+                <div className="py-16 text-center text-slate-500 space-y-2">
+                  <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs font-semibold">회차 문제 리스트를 불러오는 중입니다...</p>
+                </div>
+              ) : previewProblems.length === 0 ? (
+                <div className="py-16 text-center text-slate-500 space-y-3">
+                  <HelpCircle className="w-10 h-10 text-slate-300 mx-auto" />
+                  <p className="font-bold text-sm">등록된 문항이 아직 없습니다.</p>
+                  <button
+                    onClick={() => setShowAddInModal(true)}
+                    className="px-4 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl"
+                  >
+                    첫 번째 문항 등록하기
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {previewProblems.map((p) => {
+                    const isEditingThis = editingProbId === p.id;
+
+                    if (isEditingThis) {
+                      return (
+                        <div key={p.id} className="p-5 bg-white border-2 border-purple-500 rounded-2xl shadow-md space-y-4">
+                          <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                            <span className="font-extrabold text-sm text-purple-900">
+                              Q{editProbOrderNum} 문항 정보 즉시 수정
+                            </span>
+                            <span className="text-xs text-slate-400 font-bold">ID: {p.id}</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 순서</label>
+                              <input
+                                type="number"
+                                value={editProbOrderNum}
+                                onChange={(e) => setEditProbOrderNum(Number(e.target.value))}
+                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">카테고리</label>
+                              <input
+                                type="text"
+                                value={editProbCategory}
+                                onChange={(e) => setEditProbCategory(e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 유형</label>
+                              <select
+                                value={editProbType}
+                                onChange={(e) => setEditProbType(e.target.value as 'single' | 'text')}
+                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                              >
+                                <option value="single">객관식 (Single Choice)</option>
+                                <option value="text">단답형 (Text Input)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">배점</label>
+                              <input
+                                type="number"
+                                value={editProbScore}
+                                onChange={(e) => setEditProbScore(Number(e.target.value))}
+                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">문제 제목</label>
+                            <input
+                              type="text"
+                              value={editProbTitle}
+                              onChange={(e) => setEditProbTitle(e.target.value)}
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">문제 지문 / 내용</label>
+                            <textarea
+                              value={editProbDesc}
+                              onChange={(e) => setEditProbDesc(e.target.value)}
+                              rows={3}
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs"
+                            />
+                          </div>
+
+                          {editProbType === 'single' && (
+                            <div className="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                              <label className="block text-[11px] font-bold text-slate-700">객관식 보기 수정 (1~4번)</label>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={editOpt1}
+                                  onChange={(e) => setEditOpt1(e.target.value)}
+                                  placeholder="보기 1번"
+                                  className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                                />
+                                <input
+                                  type="text"
+                                  value={editOpt2}
+                                  onChange={(e) => setEditOpt2(e.target.value)}
+                                  placeholder="보기 2번"
+                                  className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                                />
+                                <input
+                                  type="text"
+                                  value={editOpt3}
+                                  onChange={(e) => setEditOpt3(e.target.value)}
+                                  placeholder="보기 3번"
+                                  className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                                />
+                                <input
+                                  type="text"
+                                  value={editOpt4}
+                                  onChange={(e) => setEditOpt4(e.target.value)}
+                                  placeholder="보기 4번"
+                                  className="p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">정답</label>
+                              <input
+                                type="text"
+                                value={editProbAnswer}
+                                onChange={(e) => setEditProbAnswer(e.target.value)}
+                                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-emerald-800"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">해설</label>
+                              <input
+                                type="text"
+                                value={editProbExplanation}
+                                onChange={(e) => setEditProbExplanation(e.target.value)}
+                                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => setEditingProbId(null)}
+                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+                            >
+                              취소
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEditedProb(p)}
+                              className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              <span>수정사항 저장 (Update)</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={p.id} className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs hover:border-purple-300 transition space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-7 h-7 bg-purple-100 text-purple-800 font-black text-xs rounded-lg flex items-center justify-center">
+                              Q{p.order_num}
+                            </span>
+                            <span className="font-extrabold text-xs text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200">
+                              {p.category}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                              {p.type === 'single' ? '객관식' : '단답형'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-700 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-md">
+                              {p.score}점
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditProb(p)}
+                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-lg border border-purple-200 flex items-center gap-1 transition"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              <span>수정</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProb(p.id, p.order_num)}
+                              className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-lg border border-rose-200 flex items-center gap-1 transition"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>삭제</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900 leading-snug">{p.title}</h4>
+                          <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap leading-relaxed">{p.description}</p>
+                        </div>
+
+                        {p.type === 'single' && p.options && p.options.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                            {p.options.map((opt, oIdx) => {
+                              const isCorrect = String(opt).trim() === String(p.answer).trim();
+                              return (
+                                <div
+                                  key={oIdx}
+                                  className={`p-2 rounded-xl text-xs font-medium border flex items-center gap-2 ${
+                                    isCorrect
+                                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                                      : 'bg-slate-50 border-slate-200 text-slate-700'
+                                  }`}
+                                >
+                                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                    isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                                  }`}>
+                                    {oIdx + 1}
+                                  </span>
+                                  <span className="truncate">{opt}</span>
+                                  {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 ml-auto shrink-0" />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/80">
+                            <span className="font-extrabold text-emerald-900 block text-[10px] uppercase">정답 (Answer)</span>
+                            <span className="font-bold text-emerald-700 text-xs">{p.answer}</span>
+                          </div>
+
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <span className="font-extrabold text-slate-700 block text-[10px] uppercase">해설 (Explanation)</span>
+                            <span className="text-slate-600 text-xs">{p.explanation || '해설 미입력'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

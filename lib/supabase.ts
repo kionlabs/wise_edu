@@ -572,6 +572,82 @@ export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<P
   return newProblem;
 }
 
+export async function updateProblem(problemId: string, problemData: Partial<Problem>): Promise<Problem | null> {
+  if (supabase) {
+    try {
+      const payload: any = {};
+      if (problemData.order_num !== undefined) payload.order_num = problemData.order_num;
+      if (problemData.title !== undefined) payload.title = problemData.title;
+      if (problemData.description !== undefined) payload.description = problemData.description;
+      if (problemData.category !== undefined) payload.category = problemData.category;
+      if (problemData.type !== undefined) payload.type = problemData.type;
+      if (problemData.options !== undefined) payload.options = problemData.options ? JSON.stringify(problemData.options) : null;
+      if (problemData.answer !== undefined) payload.answer = problemData.answer;
+      if (problemData.csv_url !== undefined) payload.csv_url = problemData.csv_url;
+      if (problemData.score !== undefined) payload.score = problemData.score;
+      if (problemData.explanation !== undefined) payload.explanation = problemData.explanation;
+
+      const { data, error } = await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .update(payload)
+        .eq('id', problemId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        const updated = {
+          ...data,
+          options: typeof data.options === 'string' ? JSON.parse(data.options) : data.options
+        } as Problem;
+        saveLocalProblem(updated.exam_id, updated);
+        return updated;
+      }
+    } catch (e) {
+      console.warn('Supabase updateProblem error:', e);
+    }
+  }
+
+  if (problemData.exam_id) {
+    const list = getLocalProblems(problemData.exam_id);
+    const found = list.find(p => p.id === problemId);
+    if (found) {
+      const updated = { ...found, ...problemData } as Problem;
+      saveLocalProblem(problemData.exam_id, updated);
+      return updated;
+    }
+  }
+  return null;
+}
+
+export async function deleteProblem(problemId: string, examId: string): Promise<boolean> {
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .delete()
+        .eq('id', problemId);
+
+      if (!error) {
+        deleteLocalProblem(examId, problemId);
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase deleteProblem error:', e);
+    }
+  }
+
+  deleteLocalProblem(examId, problemId);
+  return true;
+}
+
+function deleteLocalProblem(examId: string, problemId: string) {
+  if (typeof window === 'undefined') return;
+  const list = getLocalProblems(examId).filter(p => p.id !== problemId);
+  localStorage.setItem(`aice_custom_problems_${examId}`, JSON.stringify(list));
+}
+
 export async function updateExam(examId: string, examData: Partial<Exam>): Promise<Exam | null> {
   if (supabase) {
     try {
