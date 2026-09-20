@@ -219,7 +219,7 @@ export default function AdminPage() {
       pass_score: Number(newExamPassScore)
     });
 
-    const updatedExams = [...exams, created];
+    const updatedExams = await fetchExams();
     setExams(updatedExams);
     setTargetExamId(created.id);
     setBulkTargetExamId(created.id);

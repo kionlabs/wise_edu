@@ -360,7 +360,15 @@ function getLocalExams(): Exam[] {
     const data = localStorage.getItem('aice_custom_exams');
     if (!data) return MOCK_EXAMS;
     const custom: Exam[] = JSON.parse(data);
-    return [...MOCK_EXAMS, ...custom];
+    
+    // Deduplicate by ID, with custom/updated items replacing mock items
+    const examMap = new Map<string, Exam>();
+    MOCK_EXAMS.forEach(e => examMap.set(e.id, e));
+    custom.forEach(e => {
+      if (e && e.id) examMap.set(e.id, e);
+    });
+
+    return Array.from(examMap.values());
   } catch {
     return MOCK_EXAMS;
   }
@@ -368,31 +376,59 @@ function getLocalExams(): Exam[] {
 
 function saveLocalExam(exam: Exam) {
   if (typeof window === 'undefined') return;
-  const existing = getLocalExams().filter(e => !MOCK_EXAMS.some(m => m.id === e.id));
-  existing.push(exam);
-  localStorage.setItem('aice_custom_exams', JSON.stringify(existing));
+  const current = getLocalExams();
+  const idx = current.findIndex(e => e.id === exam.id);
+  if (idx !== -1) {
+    current[idx] = exam;
+  } else {
+    current.push(exam);
+  }
+  
+  // Store custom items or modified mock items only
+  const customOnly = current.filter(e => {
+    const mock = MOCK_EXAMS.find(m => m.id === e.id);
+    if (!mock) return true;
+    return JSON.stringify(mock) !== JSON.stringify(e);
+  });
+  localStorage.setItem('aice_custom_exams', JSON.stringify(customOnly));
 }
 
 // Local storage problems fallback
 function getLocalProblems(examId: string): Problem[] {
-  if (typeof window === 'undefined') return MOCK_PROBLEMS[examId] || [];
+  const mockList = MOCK_PROBLEMS[examId] || [];
+  if (typeof window === 'undefined') return mockList;
   try {
     const data = localStorage.getItem(`aice_custom_problems_${examId}`);
-    const mockList = MOCK_PROBLEMS[examId] || [];
     if (!data) return mockList;
     const custom: Problem[] = JSON.parse(data);
-    return [...mockList, ...custom];
+    
+    const probMap = new Map<string, Problem>();
+    mockList.forEach(p => probMap.set(p.id || `order_${p.order_num}`, p));
+    custom.forEach(p => probMap.set(p.id || `order_${p.order_num}`, p));
+
+    return Array.from(probMap.values());
   } catch {
-    return MOCK_PROBLEMS[examId] || [];
+    return mockList;
   }
 }
 
 function saveLocalProblem(examId: string, problem: Problem) {
   if (typeof window === 'undefined') return;
+  const current = getLocalProblems(examId);
+  const idx = current.findIndex(p => p.id === problem.id || p.order_num === problem.order_num);
+  if (idx !== -1) {
+    current[idx] = problem;
+  } else {
+    current.push(problem);
+  }
+
   const mockList = MOCK_PROBLEMS[examId] || [];
-  const existing = getLocalProblems(examId).filter(p => !mockList.some(m => m.id === p.id));
-  existing.push(problem);
-  localStorage.setItem(`aice_custom_problems_${examId}`, JSON.stringify(existing));
+  const customOnly = current.filter(p => {
+    const mock = mockList.find(m => m.id === p.id);
+    if (!mock) return true;
+    return JSON.stringify(mock) !== JSON.stringify(p);
+  });
+  localStorage.setItem(`aice_custom_problems_${examId}`, JSON.stringify(customOnly));
 }
 
 // -------------------------------------------------------------
@@ -408,7 +444,9 @@ export async function fetchExams(): Promise<Exam[]> {
         .select('*')
         .order('created_at', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data as Exam[];
+        const uniqueMap = new Map<string, Exam>();
+        data.forEach((item: any) => uniqueMap.set(item.id, item as Exam));
+        return Array.from(uniqueMap.values());
       }
     } catch (e) {
       console.warn('Supabase fetchExams error, using fallback:', e);
@@ -571,15 +609,7 @@ export async function updateExam(examId: string, examData: Partial<Exam>): Promi
 }
 
 function updateLocalExam(examId: string, updated: Exam) {
-  if (typeof window === 'undefined') return;
-  const existing = getLocalExams();
-  const idx = existing.findIndex(e => e.id === examId);
-  if (idx !== -1) {
-    existing[idx] = updated;
-  } else {
-    existing.push(updated);
-  }
-  localStorage.setItem('aice_custom_exams', JSON.stringify(existing));
+  saveLocalExam(updated);
 }
 
 function clearLocalProblems(examId: string) {
