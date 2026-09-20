@@ -121,12 +121,12 @@ export default function AdminPage() {
   // Passcode verification logic
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim() === 'admin1234' || passcode.trim() === 'aice2026') {
+    if (passcode.trim() === 'trekker00') {
       sessionStorage.setItem('aice_admin_authed', 'true');
       setIsAuthenticated(true);
       setAuthError('');
     } else {
-      setAuthError('관리자 비밀번호가 일치하지 않습니다. (기본 비밀번호: admin1234)');
+      setAuthError('관리자 비밀번호가 올바르지 않습니다.');
     }
   };
 
@@ -279,15 +279,6 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setPasscode('admin1234')}
-            className="w-full py-2 px-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            테스트용 관리자 비밀번호(admin1234) 자동 입력
-          </button>
-
           {authError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold text-center">
               {authError}
@@ -305,7 +296,7 @@ export default function AdminPage() {
                   type="password"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="비밀번호 입력 (예: admin1234)"
+                  placeholder="관리자 비밀번호를 입력하세요"
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
                 />
               </div>
