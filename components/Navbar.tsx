@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { getStoredSession, clearStoredSession } from '@/lib/supabase';
 import { StudentSession } from '@/types/database';
-import { GraduationCap, LogOut, LayoutDashboard, UserCheck } from 'lucide-react';
+import { GraduationCap, LogOut, LayoutDashboard, UserCheck, ShieldCheck } from 'lucide-react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Navigation Actions (학생 화면 보안 강화: 관리자 버튼 제거) */}
+        {/* Navigation Actions */}
         <div className="flex items-center gap-3">
           {session ? (
             <>
@@ -74,7 +74,16 @@ export default function Navbar() {
                 <span className="hidden sm:inline">로그아웃</span>
               </button>
             </>
-          ) : null}
+          ) : (
+            /* 관리자 페이지 바로가기 버튼 복구 (접속시 비밀번호 검증으로 보호됨) */
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 transition shadow-xs"
+            >
+              <ShieldCheck className="w-4 h-4 text-purple-600" />
+              <span>관리자 페이지</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>
