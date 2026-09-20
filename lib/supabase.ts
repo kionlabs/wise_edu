@@ -167,7 +167,12 @@ const MOCK_EXAMS: Exam[] = [
     time_limit_minutes: 60,
     total_questions: 15,
     pass_score: 70,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    overview: `[시험 문제 개요]
+• 주제: 퇴사여부 예측
+• 배경: 최근에는 조직 문화, 업무 강도, 보상 수준 등 다양한 요인으로 인해 직원의 퇴사 가능성을 미리 파악하는 것이 중요해지고 있습니다. 퇴사 위험이 높은 직원을 사전에 예측하고 적절한 조치를 취함으로 인적 자원 손실을 줄이고 조직의 안정성을 높일 수 있습니다.
+• 과제명: 인사 데이터를 기반으로 직원의 퇴사여부를 예측하는 AI 모델을 구현해보세요.
+• 데이터 컬럼명: Age, Attrition, Department, DistanceFromHome, Education, Gender, JobInvolvement, JobRole, JobSatisfaction, MonthlyRate, OverTime`
   },
   {
     id: 'b2222222-2222-2222-2222-222222222222',
@@ -524,11 +529,11 @@ function getLocalProblems(examId: string): Problem[] {
     if (!data) return mockList;
     const custom: Problem[] = JSON.parse(data);
     
-    const probMap = new Map<string, Problem>();
-    mockList.forEach(p => probMap.set(p.id || `order_${p.order_num}`, p));
-    custom.forEach(p => probMap.set(p.id || `order_${p.order_num}`, p));
+    const probMap = new Map<number, Problem>();
+    mockList.forEach(p => probMap.set(p.order_num, p));
+    custom.forEach(p => probMap.set(p.order_num, p));
 
-    return Array.from(probMap.values());
+    return Array.from(probMap.values()).sort((a, b) => a.order_num - b.order_num);
   } catch {
     return mockList;
   }
@@ -594,7 +599,8 @@ export async function createExam(examData: Omit<Exam, 'id' | 'created_at'>): Pro
           description: examData.description,
           time_limit_minutes: examData.time_limit_minutes,
           total_questions: examData.total_questions,
-          pass_score: examData.pass_score
+          pass_score: examData.pass_score,
+          overview: examData.overview || null
         }])
         .select()
         .single();
@@ -773,16 +779,18 @@ function deleteLocalProblem(examId: string, problemId: string) {
 export async function updateExam(examId: string, examData: Partial<Exam>): Promise<Exam | null> {
   if (supabase) {
     try {
+      const payload: any = {};
+      if (examData.title !== undefined) payload.title = examData.title;
+      if (examData.description !== undefined) payload.description = examData.description;
+      if (examData.time_limit_minutes !== undefined) payload.time_limit_minutes = examData.time_limit_minutes;
+      if (examData.total_questions !== undefined) payload.total_questions = examData.total_questions;
+      if (examData.pass_score !== undefined) payload.pass_score = examData.pass_score;
+      if (examData.overview !== undefined) payload.overview = examData.overview;
+
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_exams')
-        .update({
-          title: examData.title,
-          description: examData.description,
-          time_limit_minutes: examData.time_limit_minutes,
-          total_questions: examData.total_questions,
-          pass_score: examData.pass_score
-        })
+        .update(payload)
         .eq('id', examId)
         .select()
         .single();

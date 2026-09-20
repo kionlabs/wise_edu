@@ -71,6 +71,7 @@ export default function AdminPage() {
   // Form 1: Create Exam State
   const [newExamTitle, setNewExamTitle] = useState('');
   const [newExamDesc, setNewExamDesc] = useState('');
+  const [newExamOverview, setNewExamOverview] = useState('');
   const [newExamTimeLimit, setNewExamTimeLimit] = useState(60);
   const [newExamTotalQuestions, setNewExamTotalQuestions] = useState(15);
   const [newExamPassScore, setNewExamPassScore] = useState(70);
@@ -81,6 +82,7 @@ export default function AdminPage() {
   const [selectedEditExamId, setSelectedEditExamId] = useState<string>('');
   const [editExamTitle, setEditExamTitle] = useState('');
   const [editExamDesc, setEditExamDesc] = useState('');
+  const [editExamOverview, setEditExamOverview] = useState('');
   const [editExamTimeLimit, setEditExamTimeLimit] = useState(60);
   const [editExamTotalQuestions, setEditExamTotalQuestions] = useState(15);
   const [editExamPassScore, setEditExamPassScore] = useState(70);
@@ -96,6 +98,7 @@ export default function AdminPage() {
     if (target) {
       setEditExamTitle(target.title);
       setEditExamDesc(target.description);
+      setEditExamOverview(target.overview || '');
       setEditExamTimeLimit(target.time_limit_minutes);
       setEditExamTotalQuestions(target.total_questions);
       setEditExamPassScore(target.pass_score);
@@ -370,6 +373,7 @@ export default function AdminPage() {
     const created = await createExam({
       title: newExamTitle.trim(),
       description: newExamDesc.trim(),
+      overview: newExamOverview.trim() || undefined,
       time_limit_minutes: Number(newExamTimeLimit),
       total_questions: Number(newExamTotalQuestions),
       pass_score: Number(newExamPassScore)
@@ -386,6 +390,7 @@ export default function AdminPage() {
     // Reset form
     setNewExamTitle('');
     setNewExamDesc('');
+    setNewExamOverview('');
   };
 
   // Submit Handler: Update Exam
@@ -406,6 +411,7 @@ export default function AdminPage() {
     await updateExam(selectedEditExamId, {
       title: editExamTitle.trim(),
       description: editExamDesc.trim(),
+      overview: editExamOverview.trim() || undefined,
       time_limit_minutes: Number(editExamTimeLimit),
       total_questions: Number(editExamTotalQuestions),
       pass_score: Number(editExamPassScore)
@@ -1177,6 +1183,19 @@ export default function AdminPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  시험 문제 개요 (학생 시험 화면 안내용)
+                </label>
+                <textarea
+                  value={editExamOverview}
+                  onChange={(e) => setEditExamOverview(e.target.value)}
+                  placeholder="주제, 배경, 과제명, 데이터 컬럼명 등 문제 개요를 입력하세요."
+                  rows={4}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -1319,6 +1338,19 @@ export default function AdminPage() {
                   placeholder="예: 인공지능 응용 및 실무 데이터 전처리 포함 실전 모의고사"
                   rows={3}
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  시험 문제 개요 (학생 시험 화면 안내용)
+                </label>
+                <textarea
+                  value={newExamOverview}
+                  onChange={(e) => setNewExamOverview(e.target.value)}
+                  placeholder="주제, 배경, 과제명, 데이터 컬럼명 등 문제 개요를 입력하세요."
+                  rows={4}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
                 />
               </div>
 
