@@ -353,6 +353,48 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
   ]
 };
 
+// Local storage exams fallback
+function getLocalExams(): Exam[] {
+  if (typeof window === 'undefined') return MOCK_EXAMS;
+  try {
+    const data = localStorage.getItem('aice_custom_exams');
+    if (!data) return MOCK_EXAMS;
+    const custom: Exam[] = JSON.parse(data);
+    return [...MOCK_EXAMS, ...custom];
+  } catch {
+    return MOCK_EXAMS;
+  }
+}
+
+function saveLocalExam(exam: Exam) {
+  if (typeof window === 'undefined') return;
+  const existing = getLocalExams().filter(e => !MOCK_EXAMS.some(m => m.id === e.id));
+  existing.push(exam);
+  localStorage.setItem('aice_custom_exams', JSON.stringify(existing));
+}
+
+// Local storage problems fallback
+function getLocalProblems(examId: string): Problem[] {
+  if (typeof window === 'undefined') return MOCK_PROBLEMS[examId] || [];
+  try {
+    const data = localStorage.getItem(`aice_custom_problems_${examId}`);
+    const mockList = MOCK_PROBLEMS[examId] || [];
+    if (!data) return mockList;
+    const custom: Problem[] = JSON.parse(data);
+    return [...mockList, ...custom];
+  } catch {
+    return MOCK_PROBLEMS[examId] || [];
+  }
+}
+
+function saveLocalProblem(examId: string, problem: Problem) {
+  if (typeof window === 'undefined') return;
+  const mockList = MOCK_PROBLEMS[examId] || [];
+  const existing = getLocalProblems(examId).filter(p => !mockList.some(m => m.id === p.id));
+  existing.push(problem);
+  localStorage.setItem(`aice_custom_problems_${examId}`, JSON.stringify(existing));
+}
+
 // -------------------------------------------------------------
 // Supabase Data Access Functions (aice 스키마 타겟팅)
 // -------------------------------------------------------------
@@ -369,10 +411,45 @@ export async function fetchExams(): Promise<Exam[]> {
         return data as Exam[];
       }
     } catch (e) {
-      console.warn('Supabase fetchExams (aice.aice_exams) error, using fallback:', e);
+      console.warn('Supabase fetchExams error, using fallback:', e);
     }
   }
-  return MOCK_EXAMS;
+  return getLocalExams();
+}
+
+export async function createExam(examData: Omit<Exam, 'id' | 'created_at'>): Promise<Exam> {
+  const newExam: Exam = {
+    ...examData,
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `exam_${Date.now()}`,
+    created_at: new Date().toISOString()
+  };
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .schema('aice')
+        .from('aice_exams')
+        .insert([{
+          title: examData.title,
+          description: examData.description,
+          time_limit_minutes: examData.time_limit_minutes,
+          total_questions: examData.total_questions,
+          pass_score: examData.pass_score
+        }])
+        .select()
+        .single();
+
+      if (!error && data) {
+        saveLocalExam(data as Exam);
+        return data as Exam;
+      }
+    } catch (e) {
+      console.warn('Supabase createExam error, saving locally:', e);
+    }
+  }
+
+  saveLocalExam(newExam);
+  return newExam;
 }
 
 export async function fetchExamById(examId: string): Promise<Exam | null> {
@@ -388,10 +465,11 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
         return data as Exam;
       }
     } catch (e) {
-      console.warn('Supabase fetchExamById (aice.aice_exams) error, using fallback:', e);
+      console.warn('Supabase fetchExamById error, using fallback:', e);
     }
   }
-  return MOCK_EXAMS.find(e => e.id === examId) || MOCK_EXAMS[0];
+  const allExams = getLocalExams();
+  return allExams.find(e => e.id === examId) || allExams[0];
 }
 
 export async function fetchProblemsByExamId(examId: string): Promise<Problem[]> {
@@ -410,10 +488,50 @@ export async function fetchProblemsByExamId(examId: string): Promise<Problem[]> 
         })) as Problem[];
       }
     } catch (e) {
-      console.warn('Supabase fetchProblemsByExamId (aice.aice_problems) error, using fallback:', e);
+      console.warn('Supabase fetchProblemsByExamId error, using fallback:', e);
     }
   }
-  return MOCK_PROBLEMS[examId] || MOCK_PROBLEMS['a1111111-1111-1111-1111-111111111111'];
+  return getLocalProblems(examId);
+}
+
+export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<Problem> {
+  const newProblem: Problem = {
+    ...problemData,
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prob_${Date.now()}`
+  };
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .insert([{
+          exam_id: problemData.exam_id,
+          order_num: problemData.order_num,
+          title: problemData.title,
+          description: problemData.description,
+          category: problemData.category,
+          type: problemData.type,
+          options: problemData.options ? JSON.stringify(problemData.options) : null,
+          answer: problemData.answer,
+          csv_url: problemData.csv_url || null,
+          score: problemData.score,
+          explanation: problemData.explanation
+        }])
+        .select()
+        .single();
+
+      if (!error && data) {
+        saveLocalProblem(problemData.exam_id, data as Problem);
+        return data as Problem;
+      }
+    } catch (e) {
+      console.warn('Supabase createProblem error, saving locally:', e);
+    }
+  }
+
+  saveLocalProblem(problemData.exam_id, newProblem);
+  return newProblem;
 }
 
 export async function saveSubmission(submission: Omit<Submission, 'id' | 'submitted_at'>): Promise<Submission> {
@@ -446,7 +564,7 @@ export async function saveSubmission(submission: Omit<Submission, 'id' | 'submit
         return data as Submission;
       }
     } catch (e) {
-      console.warn('Supabase saveSubmission (aice.aice_submissions) error, saving locally:', e);
+      console.warn('Supabase saveSubmission error, saving locally:', e);
     }
   }
 
