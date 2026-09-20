@@ -76,11 +76,12 @@ export default function AdminPage() {
   const [editExamTotalQuestions, setEditExamTotalQuestions] = useState(15);
   const [editExamPassScore, setEditExamPassScore] = useState(70);
   const [editExamCsvUrl, setEditExamCsvUrl] = useState('');
+  const [isUploadingEditCsv, setIsUploadingEditCsv] = useState(false);
   const [isUpdatingExam, setIsUpdatingExam] = useState(false);
   const [editExamMsg, setEditExamMsg] = useState('');
 
   // Select Exam to Edit helper
-  const handleSelectExamToEdit = (examId: string, currentExams: Exam[] = exams) => {
+  const handleSelectExamToEdit = async (examId: string, currentExams: Exam[] = exams) => {
     setSelectedEditExamId(examId);
     const target = currentExams.find(e => e.id === examId);
     if (target) {
@@ -90,7 +91,22 @@ export default function AdminPage() {
       setEditExamTotalQuestions(target.total_questions);
       setEditExamPassScore(target.pass_score);
       setEditExamMsg('');
+
+      const existingProbs = await fetchProblemsByExamId(examId);
+      const csv = existingProbs.find(p => p.csv_url)?.csv_url || '';
+      setEditExamCsvUrl(csv);
     }
+  };
+
+  const handleEditCsvFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingEditCsv(true);
+    const uploadedUrl = await uploadCsvDataset(file);
+    setEditExamCsvUrl(uploadedUrl);
+    setIsUploadingEditCsv(false);
+    setEditExamMsg(`'${file.name}' CSV 파일이 선택/업로드되었습니다. (저장 버튼을 누르면 적용됩니다)`);
   };
 
   // Form 2: Manage Problems State
@@ -1034,17 +1050,53 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  연결된 실습용 CSV 파일 URL (선택)
+              {/* Rich CSV Upload Section */}
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-3">
+                <label className="block text-xs font-extrabold text-emerald-900 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                    실습용 CSV 데이터셋 업로드 및 지정 (선택)
+                  </span>
                 </label>
-                <input
-                  type="text"
-                  value={editExamCsvUrl}
-                  onChange={(e) => setEditExamCsvUrl(e.target.value)}
-                  placeholder="예: /sample_data/customer_data.csv"
-                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <label className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center justify-center gap-2 transition shrink-0">
+                    <Upload className="w-4 h-4" />
+                    <span>{isUploadingEditCsv ? 'CSV 업로드 중...' : 'CSV 파일 직접 업로드'}</span>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleEditCsvFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <input
+                    type="text"
+                    value={editExamCsvUrl}
+                    onChange={(e) => setEditExamCsvUrl(e.target.value)}
+                    placeholder="예: /sample_data/customer_data.csv"
+                    className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-mono text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-emerald-800 pt-0.5">
+                  <span className="font-bold">기본 샘플 선택:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditExamCsvUrl('/sample_data/customer_data.csv')}
+                    className="px-2.5 py-1 bg-white hover:bg-emerald-100 rounded-lg border border-emerald-200 font-bold transition text-[11px]"
+                  >
+                    고객 데이터셋 (customer_data.csv)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditExamCsvUrl('/sample_data/housing_prices.csv')}
+                    className="px-2.5 py-1 bg-white hover:bg-emerald-100 rounded-lg border border-emerald-200 font-bold transition text-[11px]"
+                  >
+                    주택가격 데이터셋 (housing_prices.csv)
+                  </button>
+                </div>
               </div>
 
               <button
