@@ -588,6 +588,51 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
   return { count: formattedProblems.length };
 }
 
+export async function uploadCsvDataset(file: File): Promise<string> {
+  if (supabase) {
+    try {
+      const fileName = `dataset_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { data, error } = await supabase
+        .storage
+        .from('aice_csv')
+        .upload(fileName, file, { upsert: true });
+
+      if (!error && data) {
+        const { data: publicUrlData } = supabase
+          .storage
+          .from('aice_csv')
+          .getPublicUrl(fileName);
+        if (publicUrlData?.publicUrl) {
+          return publicUrlData.publicUrl;
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase storage upload error, using local fallback:', e);
+    }
+  }
+
+  if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
+    return URL.createObjectURL(file);
+  }
+  return `/sample_data/${file.name}`;
+}
+
+export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<boolean> {
+  if (supabase) {
+    try {
+      await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .update({ csv_url: csvUrl })
+        .eq('exam_id', examId);
+      return true;
+    } catch (e) {
+      console.warn('Supabase updateExamCsvUrl error:', e);
+    }
+  }
+  return false;
+}
+
 export async function saveSubmission(submission: Omit<Submission, 'id' | 'submitted_at'>): Promise<Submission> {
   const newSubmission: Submission = {
     ...submission,

@@ -7,7 +7,9 @@ import {
   createExam, 
   fetchProblemsByExamId, 
   createProblem,
-  bulkCreateProblems
+  bulkCreateProblems,
+  uploadCsvDataset,
+  updateExamCsvUrl
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -31,7 +33,9 @@ import {
   Check,
   Upload,
   Code2,
-  Rocket
+  Rocket,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -80,9 +84,12 @@ export default function AdminPage() {
   const [isCreatingProblem, setIsCreatingProblem] = useState(false);
   const [probMsg, setProbMsg] = useState('');
 
-  // Form 3: Bulk Upload State
+  // Form 3: Bulk Upload & CSV Upload State
   const [bulkTargetExamId, setBulkTargetExamId] = useState<string>('');
   const [bulkJsonInput, setBulkJsonInput] = useState('');
+  const [csvFileUrl, setCsvFileUrl] = useState('/sample_data/customer_data.csv');
+  const [csvFileName, setCsvFileName] = useState('customer_data.csv');
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [bulkMsg, setBulkMsg] = useState('');
 
@@ -115,7 +122,7 @@ export default function AdminPage() {
     }
 
     loadAdminData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, targetExamId, bulkTargetExamId]);
 
   // Load problems when targetExamId changes
   useEffect(() => {
@@ -221,7 +228,21 @@ export default function AdminPage() {
     setProbOrderNum((prev) => prev + 1);
   };
 
-  // Submit Handler: Bulk Upload Problems
+  // CSV Dataset Upload Handler
+  const handleCsvFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCsv(true);
+    setCsvFileName(file.name);
+
+    const uploadedUrl = await uploadCsvDataset(file);
+    setCsvFileUrl(uploadedUrl);
+    setIsUploadingCsv(false);
+    setBulkMsg(`'${file.name}' 데이터셋 파일이 준비되었습니다. (URL: ${uploadedUrl})`);
+  };
+
+  // Submit Handler: Bulk Upload Problems with CSV Mapping
   const handleBulkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bulkTargetExamId) {
@@ -238,12 +259,24 @@ export default function AdminPage() {
 
     try {
       const parsed = JSON.parse(bulkJsonInput.trim());
-      const res = await bulkCreateProblems(bulkTargetExamId, parsed);
+      
+      // Inject csv_url if provided and missing in raw json item
+      const mappedList = parsed.map((item: any) => ({
+        ...item,
+        csv_url: item.csv_url || (csvFileUrl ? csvFileUrl : undefined)
+      }));
+
+      const res = await bulkCreateProblems(bulkTargetExamId, mappedList);
       
       if (res.error) {
         setBulkMsg(`오류: ${res.error}`);
       } else {
-        setBulkMsg(`🎉 총 ${res.count}개 문항이 선택한 모의고사 회차에 일괄 등록되었습니다!`);
+        // Also update existing problems' csv_url if needed
+        if (csvFileUrl) {
+          await updateExamCsvUrl(bulkTargetExamId, csvFileUrl);
+        }
+
+        setBulkMsg(`🎉 총 ${res.count}개 문항이 선택한 모의고사 회차에 일괄 등록되었으며, 실습용 CSV가 다운로드 매핑되었습니다!`);
         setBulkJsonInput('');
         
         if (targetExamId === bulkTargetExamId) {
@@ -258,7 +291,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleJsonFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -392,7 +425,7 @@ export default function AdminPage() {
               <span className="text-xs text-slate-400">• 남원용성고 포함 관리</span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              AICE Basic 관리자 센터
+              AICE Basic 관리자 대시보드
             </h1>
           </div>
         </div>
@@ -417,7 +450,19 @@ export default function AdminPage() {
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          학생 성적 통계 및 CSV 다운로드
+          학생 성적 통계 및 모의고사 현황
+        </button>
+
+        <button
+          onClick={() => setActiveTab('bulk_upload')}
+          className={`pb-3.5 px-4 font-extrabold text-sm border-b-2 transition flex items-center gap-2 shrink-0 ${
+            activeTab === 'bulk_upload'
+              ? 'border-purple-600 text-purple-700'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Rocket className="w-4 h-4 text-purple-600" />
+          문제 일괄 등록 (JSON/CSV 업로드)
         </button>
 
         <button
@@ -430,18 +475,6 @@ export default function AdminPage() {
         >
           <FilePlus className="w-4 h-4" />
           모의고사 회차 신규 생성
-        </button>
-
-        <button
-          onClick={() => setActiveTab('bulk_upload')}
-          className={`pb-3.5 px-4 font-extrabold text-sm border-b-2 transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'bulk_upload'
-              ? 'border-purple-600 text-purple-700'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <Rocket className="w-4 h-4 text-purple-600" />
-          문제 일괄 등록 (JSON 업로드)
         </button>
 
         <button
@@ -459,7 +492,7 @@ export default function AdminPage() {
 
       {/* TAB 1: Submissions & Student Grades */}
       {activeTab === 'submissions' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Top Analytics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
@@ -503,115 +536,321 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Filter Bar & CSV Export Button */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-              <div className="relative w-full sm:w-72">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="학생 이름, 학교, 학번 검색..."
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
-                />
-              </div>
+          {/* Sub-section 1: 등록된 모의고사 현황 (Registered Exams Overview) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-bold text-slate-900">등록된 모의고사 회차별 응시 현황</h2>
+            </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  value={selectedExamFilter}
-                  onChange={(e) => setSelectedExamFilter(e.target.value)}
-                  className="w-full sm:w-auto py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="ALL">전체 모의고사 회차 필터</option>
-                  {exams.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.title}
-                    </option>
-                  ))}
-                </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {exams.map((ex) => {
+                const exSubs = submissions.filter((s) => s.exam_id === ex.id);
+                const exPassCount = exSubs.filter((s) => s.pass_status === 'PASS').length;
+                const exPassRate = exSubs.length > 0 ? Math.round((exPassCount / exSubs.length) * 100) : 0;
+                const exAvgScore = exSubs.length > 0 ? Math.round(exSubs.reduce((a, b) => a + b.score, 0) / exSubs.length) : 0;
+
+                return (
+                  <div key={ex.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3 hover:border-purple-200 transition">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <span className="font-extrabold text-sm text-slate-900 line-clamp-1">{ex.title}</span>
+                      <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-md border border-purple-200 shrink-0">
+                        {ex.time_limit_minutes}분 / {ex.total_questions}문항
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{ex.description}</p>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold">응시자</span>
+                        <span className="font-bold text-slate-900">{exSubs.length}명</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold">평균점수</span>
+                        <span className="font-bold text-blue-600">{exAvgScore}점</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold">합격률</span>
+                        <span className="font-bold text-emerald-600">{exPassRate}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Sub-section 2: 학생 응시 성적 상세 테이블 (Student Submissions Table) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-slate-900">학생 응시 성적 상세 리스트</h2>
               </div>
             </div>
 
-            <button
-              onClick={exportToCSV}
-              className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition"
-            >
-              <Download className="w-4 h-4" />
-              전체 성적 CSV 내보내기
-            </button>
-          </div>
+            {/* Filter Bar & CSV Export Button */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="학생 이름, 학교, 학번 검색..."
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
+                  />
+                </div>
 
-          {/* Student Submissions Table */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-            {loading ? (
-              <div className="p-12 text-center text-slate-500 space-y-2">
-                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-xs font-semibold">학생 성적 데이터를 불러오는 중입니다...</p>
-              </div>
-            ) : filteredSubmissions.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 space-y-2">
-                <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto" />
-                <p className="font-semibold text-sm">조건에 일치하는 응시 기록이 없습니다.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
-                      <th className="py-4 px-5">학교명</th>
-                      <th className="py-4 px-5">학번</th>
-                      <th className="py-4 px-5">학생 이름</th>
-                      <th className="py-4 px-5">응시 모의고사</th>
-                      <th className="py-4 px-5 text-center">점수</th>
-                      <th className="py-4 px-5 text-center">합격 여부</th>
-                      <th className="py-4 px-5">제출 일시</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-800">
-                    {filteredSubmissions.map((sub) => (
-                      <tr key={sub.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-4 px-5 font-bold text-slate-900">{sub.school}</td>
-                        <td className="py-4 px-5 font-mono text-slate-600">{sub.student_id}</td>
-                        <td className="py-4 px-5 font-bold text-blue-700">{sub.student_name}</td>
-                        <td className="py-4 px-5 font-semibold text-slate-700">{sub.exam_title || 'AICE Basic 모의고사'}</td>
-                        <td className="py-4 px-5 text-center font-black text-sm">
-                          {sub.score} <span className="text-[11px] text-slate-400 font-normal">/ {sub.total_score}점</span>
-                        </td>
-                        <td className="py-4 px-5 text-center">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold ${
-                            sub.pass_status === 'PASS' 
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                              : 'bg-rose-100 text-rose-800 border border-rose-200'
-                          }`}>
-                            {sub.pass_status === 'PASS' ? (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                합격 (PASS)
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                                불합격 (FAIL)
-                              </>
-                            )}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 text-slate-500 text-[11px]">
-                          {new Date(sub.submitted_at).toLocaleString('ko-KR')}
-                        </td>
-                      </tr>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedExamFilter}
+                    onChange={(e) => setSelectedExamFilter(e.target.value)}
+                    className="w-full sm:w-auto py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="ALL">전체 모의고사 회차 필터</option>
+                    {exams.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.title}
+                      </option>
                     ))}
-                  </tbody>
-                </table>
+                  </select>
+                </div>
               </div>
-            )}
+
+              <button
+                onClick={exportToCSV}
+                className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition"
+              >
+                <Download className="w-4 h-4" />
+                전체 성적 CSV 내보내기
+              </button>
+            </div>
+
+            {/* Submissions Table */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+              {loading ? (
+                <div className="p-12 text-center text-slate-500 space-y-2">
+                  <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs font-semibold">학생 성적 데이터를 불러오는 중입니다...</p>
+                </div>
+              ) : filteredSubmissions.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 space-y-2">
+                  <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto" />
+                  <p className="font-semibold text-sm">조건에 일치하는 응시 기록이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                        <th className="py-4 px-5">학교명</th>
+                        <th className="py-4 px-5">학번</th>
+                        <th className="py-4 px-5">학생 이름</th>
+                        <th className="py-4 px-5">응시 모의고사</th>
+                        <th className="py-4 px-5 text-center">점수</th>
+                        <th className="py-4 px-5 text-center">합격 여부</th>
+                        <th className="py-4 px-5">제출 일시</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs text-slate-800">
+                      {filteredSubmissions.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-4 px-5 font-bold text-slate-900">{sub.school}</td>
+                          <td className="py-4 px-5 font-mono text-slate-600">{sub.student_id}</td>
+                          <td className="py-4 px-5 font-bold text-blue-700">{sub.student_name}</td>
+                          <td className="py-4 px-5 font-semibold text-slate-700">{sub.exam_title || 'AICE Basic 모의고사'}</td>
+                          <td className="py-4 px-5 text-center font-black text-sm">
+                            {sub.score} <span className="text-[11px] text-slate-400 font-normal">/ {sub.total_score}점</span>
+                          </td>
+                          <td className="py-4 px-5 text-center">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold ${
+                              sub.pass_status === 'PASS' 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                : 'bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}>
+                              {sub.pass_status === 'PASS' ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  합격 (PASS)
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                  불합격 (FAIL)
+                                </>
+                              )}
+                            </span>
+                          </td>
+                          <td className="py-4 px-5 text-slate-500 text-[11px]">
+                            {new Date(sub.submitted_at).toLocaleString('ko-KR')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* TAB 2: Create Exam Form */}
+      {/* TAB 2: Bulk Upload Problems Form (JSON + CSV Dataset Upload) */}
+      {activeTab === 'bulk_upload' && (
+        <div className="max-w-3xl bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Rocket className="w-6 h-6 text-purple-600" />
+              문제 일괄 등록 & 실습용 CSV 파일 연결
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              실습용 CSV 데이터셋을 업로드하고, AI가 변환해 준 JSON 배열 텍스트를 복사·붙여넣기하면 선택한 회차에 15개 문항이 싹 등록됩니다.
+            </p>
+          </div>
+
+          {bulkMsg && (
+            <div className={`p-4 rounded-2xl text-xs font-bold leading-relaxed ${
+              bulkMsg.includes('축하') || bulkMsg.includes('등록되었습니다') || bulkMsg.includes('준비되었습니다')
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' 
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
+            }`}>
+              {bulkMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleBulkUpload} className="space-y-6">
+            {/* Step 1: Exam Session Select */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                1. 등록할 모의고사 회차 선택
+              </label>
+              <select
+                value={bulkTargetExamId}
+                onChange={(e) => setBulkTargetExamId(e.target.value)}
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {exams.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Step 2: CSV Dataset Upload Section */}
+            <div className="p-5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3">
+              <label className="block text-xs font-extrabold text-emerald-900 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                  2. 실습용 CSV 데이터셋 파일 업로드 (선택)
+                </span>
+                <span className="text-[11px] font-normal text-emerald-700">
+                  학생들이 시험 화면에서 다운로드할 데이터셋
+                </span>
+              </label>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <label className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center justify-center gap-2 transition shrink-0">
+                  <Upload className="w-4 h-4" />
+                  <span>{isUploadingCsv ? 'CSV 업로드 중...' : 'CSV 파일 직접 선택'}</span>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCsvFileUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="w-full text-xs font-semibold text-emerald-900 bg-white/80 px-3.5 py-2.5 rounded-xl border border-emerald-200/80 truncate">
+                  현재 지정된 CSV 경로: <span className="font-mono text-emerald-700">{csvFileUrl}</span>
+                </div>
+              </div>
+
+              {/* Sample Preset Choice Pills */}
+              <div className="pt-1 flex items-center gap-2 text-[11px] text-emerald-800">
+                <span className="font-bold">기본 샘플 선택:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCsvFileUrl('/sample_data/customer_data.csv');
+                    setCsvFileName('customer_data.csv');
+                  }}
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-100 rounded-lg border border-emerald-200 font-bold transition"
+                >
+                  고객 데이터셋 (customer_data.csv)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCsvFileUrl('/sample_data/housing_prices.csv');
+                    setCsvFileName('housing_prices.csv');
+                  }}
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-100 rounded-lg border border-emerald-200 font-bold transition"
+                >
+                  주택가격 데이터셋 (housing_prices.csv)
+                </button>
+              </div>
+            </div>
+
+            {/* Step 3: JSON Text / File Input */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                  <Code2 className="w-4 h-4 text-purple-600" />
+                  3. JSON 데이터 텍스트 입력 또는 .json 파일 선택
+                </label>
+
+                <label className="cursor-pointer text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1 transition">
+                  <Upload className="w-3.5 h-3.5" />
+                  .json 파일 선택
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleJsonFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <textarea
+                value={bulkJsonInput}
+                onChange={(e) => setBulkJsonInput(e.target.value)}
+                placeholder='AI가 생성해 준 JSON 배열을 붙여넣으세요. 예:
+[
+  {
+    "order_num": 1,
+    "title": "알고리즘 유형 선택",
+    "content": "본 과제 해결에 알맞은...",
+    "category": "AI 개념",
+    "type": "single",
+    "options": ["회귀 모형", "분류 모형"],
+    "answer": "분류 모형",
+    "score": 20,
+    "explanation": "해설 문구..."
+  }, ...
+]'
+                rows={10}
+                className="w-full p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 leading-relaxed shadow-inner"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isBulkUploading}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/25 transition text-sm flex items-center justify-center gap-2"
+            >
+              <Rocket className="w-5 h-5" />
+              <span>{isBulkUploading ? '문항 일괄 등록 중...' : '선택한 모의고사 회차에 문항 일괄 등록하기'}</span>
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 3: Create Exam Form */}
       {activeTab === 'create_exam' && (
         <div className="max-w-2xl bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
           <div>
@@ -704,100 +943,6 @@ export default function AdminPage() {
             >
               <Check className="w-4 h-4" />
               <span>{isCreatingExam ? '회차 생성 중...' : '신규 모의고사 회차 생성하기'}</span>
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* TAB 3: Bulk Upload Problems Form (JSON/CSV) */}
-      {activeTab === 'bulk_upload' && (
-        <div className="max-w-3xl bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Rocket className="w-6 h-6 text-purple-600" />
-              문제 일괄 등록 (JSON / 파일 업로드)
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              AI가 변환해 준 JSON 배열 텍스트를 복사·붙여넣기하거나 .json 파일로 업로드하면 15개 문항이 선택한 회차에 싹 등록됩니다.
-            </p>
-          </div>
-
-          {bulkMsg && (
-            <div className={`p-4 rounded-2xl text-xs font-bold leading-relaxed ${
-              bulkMsg.includes('축하') || bulkMsg.includes('등록되었습니다') 
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' 
-                : 'bg-rose-50 text-rose-700 border border-rose-200'
-            }`}>
-              {bulkMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleBulkUpload} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                1. 등록할 모의고사 회차 선택
-              </label>
-              <select
-                value={bulkTargetExamId}
-                onChange={(e) => setBulkTargetExamId(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                {exams.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                  <Code2 className="w-4 h-4 text-purple-600" />
-                  2. JSON 데이터 텍스트 입력 또는 파일 업로드
-                </label>
-
-                <label className="cursor-pointer text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1 transition">
-                  <Upload className="w-3.5 h-3.5" />
-                  .json 파일 선택
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              <textarea
-                value={bulkJsonInput}
-                onChange={(e) => setBulkJsonInput(e.target.value)}
-                placeholder='AI가 생성해 준 JSON 배열을 붙여넣으세요. 예:
-[
-  {
-    "order_num": 1,
-    "title": "알고리즘 유형 선택",
-    "content": "본 과제 해결에 알맞은...",
-    "category": "AI 개념",
-    "type": "single",
-    "options": ["회귀 모형", "분류 모형"],
-    "answer": "분류 모형",
-    "score": 20,
-    "explanation": "해설 문구..."
-  }, ...
-]'
-                rows={12}
-                className="w-full p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 leading-relaxed shadow-inner"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isBulkUploading}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/25 transition text-sm flex items-center justify-center gap-2"
-            >
-              <Rocket className="w-5 h-5" />
-              <span>{isBulkUploading ? '문항 일괄 등록 중...' : '선택한 모의고사 회차에 문항 일괄 등록하기'}</span>
             </button>
           </form>
         </div>
