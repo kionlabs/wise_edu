@@ -534,6 +534,59 @@ export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<P
   return newProblem;
 }
 
+export async function updateExam(examId: string, examData: Partial<Exam>): Promise<Exam | null> {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .schema('aice')
+        .from('aice_exams')
+        .update({
+          title: examData.title,
+          description: examData.description,
+          time_limit_minutes: examData.time_limit_minutes,
+          total_questions: examData.total_questions,
+          pass_score: examData.pass_score
+        })
+        .eq('id', examId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        updateLocalExam(examId, data as Exam);
+        return data as Exam;
+      }
+    } catch (e) {
+      console.warn('Supabase updateExam error:', e);
+    }
+  }
+
+  const allExams = getLocalExams();
+  const found = allExams.find(e => e.id === examId);
+  if (found) {
+    const updated = { ...found, ...examData };
+    updateLocalExam(examId, updated);
+    return updated;
+  }
+  return null;
+}
+
+function updateLocalExam(examId: string, updated: Exam) {
+  if (typeof window === 'undefined') return;
+  const existing = getLocalExams();
+  const idx = existing.findIndex(e => e.id === examId);
+  if (idx !== -1) {
+    existing[idx] = updated;
+  } else {
+    existing.push(updated);
+  }
+  localStorage.setItem('aice_custom_exams', JSON.stringify(existing));
+}
+
+function clearLocalProblems(examId: string) {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(`aice_custom_problems_${examId}`);
+}
+
 export async function bulkCreateProblems(examId: string, rawList: any[]): Promise<{ count: number; error?: string }> {
   if (!Array.isArray(rawList) || rawList.length === 0) {
     return { count: 0, error: '올바른 JSON 배열 형식이 아닙니다. [...] 형태여야 합니다.' };
@@ -555,6 +608,14 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
 
   if (supabase) {
     try {
+      // 1. 기존 문항 덮어쓰기를 위해 해당 exam_id의 이전 문제 삭제 (Overwriting)
+      await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .delete()
+        .eq('exam_id', examId);
+
+      // 2. 신규 문제 일괄 등록
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_problems')
@@ -562,6 +623,7 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
         .select();
 
       if (!error && data) {
+        clearLocalProblems(examId);
         data.forEach(item => saveLocalProblem(examId, {
           ...item,
           options: typeof item.options === 'string' ? JSON.parse(item.options) : item.options
@@ -575,7 +637,8 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
     }
   }
 
-  // Local storage fallback
+  // Local storage fallback (Overwriting)
+  clearLocalProblems(examId);
   formattedProblems.forEach((p, idx) => {
     const localItem: Problem = {
       ...p,

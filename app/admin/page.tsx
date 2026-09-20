@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { 
   fetchAllSubmissions, 
   fetchExams, 
-  createExam, 
+  createExam,
+  updateExam, 
   fetchProblemsByExamId, 
   createProblem,
   bulkCreateProblems,
@@ -35,7 +36,9 @@ import {
   Code2,
   Rocket,
   Clock,
-  Sparkles
+  Sparkles,
+  Pencil,
+  FileEdit
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -60,10 +63,35 @@ export default function AdminPage() {
   const [newExamTitle, setNewExamTitle] = useState('');
   const [newExamDesc, setNewExamDesc] = useState('');
   const [newExamTimeLimit, setNewExamTimeLimit] = useState(60);
-  const [newExamTotalQuestions, setNewExamTotalQuestions] = useState(5);
+  const [newExamTotalQuestions, setNewExamTotalQuestions] = useState(15);
   const [newExamPassScore, setNewExamPassScore] = useState(70);
   const [isCreatingExam, setIsCreatingExam] = useState(false);
   const [examMsg, setExamMsg] = useState('');
+
+  // Form 1-2: Edit Exam State
+  const [selectedEditExamId, setSelectedEditExamId] = useState<string>('');
+  const [editExamTitle, setEditExamTitle] = useState('');
+  const [editExamDesc, setEditExamDesc] = useState('');
+  const [editExamTimeLimit, setEditExamTimeLimit] = useState(60);
+  const [editExamTotalQuestions, setEditExamTotalQuestions] = useState(15);
+  const [editExamPassScore, setEditExamPassScore] = useState(70);
+  const [editExamCsvUrl, setEditExamCsvUrl] = useState('');
+  const [isUpdatingExam, setIsUpdatingExam] = useState(false);
+  const [editExamMsg, setEditExamMsg] = useState('');
+
+  // Select Exam to Edit helper
+  const handleSelectExamToEdit = (examId: string, currentExams: Exam[] = exams) => {
+    setSelectedEditExamId(examId);
+    const target = currentExams.find(e => e.id === examId);
+    if (target) {
+      setEditExamTitle(target.title);
+      setEditExamDesc(target.description);
+      setEditExamTimeLimit(target.time_limit_minutes);
+      setEditExamTotalQuestions(target.total_questions);
+      setEditExamPassScore(target.pass_score);
+      setEditExamMsg('');
+    }
+  };
 
   // Form 2: Manage Problems State
   const [targetExamId, setTargetExamId] = useState<string>('');
@@ -117,6 +145,9 @@ export default function AdminPage() {
       if (examData.length > 0) {
         if (!targetExamId) setTargetExamId(examData[0].id);
         if (!bulkTargetExamId) setBulkTargetExamId(examData[0].id);
+        if (!selectedEditExamId) {
+          handleSelectExamToEdit(examData[0].id, examData);
+        }
       }
       setLoading(false);
     }
@@ -172,15 +203,51 @@ export default function AdminPage() {
       pass_score: Number(newExamPassScore)
     });
 
-    setExams((prev) => [...prev, created]);
+    const updatedExams = [...exams, created];
+    setExams(updatedExams);
     setTargetExamId(created.id);
     setBulkTargetExamId(created.id);
+    handleSelectExamToEdit(created.id, updatedExams);
     setIsCreatingExam(false);
     setExamMsg(`'${created.title}' 회차가 성공적으로 등록되었습니다!`);
     
     // Reset form
     setNewExamTitle('');
     setNewExamDesc('');
+  };
+
+  // Submit Handler: Update Exam
+  const handleUpdateExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEditExamId) {
+      setEditExamMsg('수정할 모의고사 회차를 선택해 주세요.');
+      return;
+    }
+    if (!editExamTitle.trim() || !editExamDesc.trim()) {
+      setEditExamMsg('모의고사 제목과 설명을 입력해 주세요.');
+      return;
+    }
+
+    setIsUpdatingExam(true);
+    setEditExamMsg('');
+
+    await updateExam(selectedEditExamId, {
+      title: editExamTitle.trim(),
+      description: editExamDesc.trim(),
+      time_limit_minutes: Number(editExamTimeLimit),
+      total_questions: Number(editExamTotalQuestions),
+      pass_score: Number(editExamPassScore)
+    });
+
+    if (editExamCsvUrl.trim()) {
+      await updateExamCsvUrl(selectedEditExamId, editExamCsvUrl.trim());
+    }
+
+    const updatedExams = await fetchExams();
+    setExams(updatedExams);
+
+    setIsUpdatingExam(false);
+    setEditExamMsg(`'${editExamTitle.trim()}' 회차 정보가 성공적으로 수정되었습니다!`);
   };
 
   // Submit Handler: Create Problem
@@ -473,8 +540,8 @@ export default function AdminPage() {
               : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
-          <FilePlus className="w-4 h-4" />
-          모의고사 회차 신규 생성
+          <FileEdit className="w-4 h-4" />
+          모의고사 회차 관리 (생성/수정)
         </button>
 
         <button
@@ -554,9 +621,22 @@ export default function AdminPage() {
                   <div key={ex.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3 hover:border-purple-200 transition">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                       <span className="font-extrabold text-sm text-slate-900 line-clamp-1">{ex.title}</span>
-                      <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-md border border-purple-200 shrink-0">
-                        {ex.time_limit_minutes}분 / {ex.total_questions}문항
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-md border border-purple-200">
+                          {ex.time_limit_minutes}분 / {ex.total_questions}문항
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleSelectExamToEdit(ex.id);
+                            setActiveTab('create_exam');
+                          }}
+                          className="p-1 hover:bg-purple-100 text-purple-700 rounded-md transition"
+                          title="회차 정보 수정"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{ex.description}</p>
@@ -850,101 +930,229 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 3: Create Exam Form */}
+      {/* TAB 3: Exam Management (Edit / Create) */}
       {activeTab === 'create_exam' && (
-        <div className="max-w-2xl bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-purple-600" />
-              신규 모의고사 회차 생성
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              새로운 모의고사(예: AICE Basic 제3회 실전 모의고사) 정보를 입력하여 추가하세요.
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Card 1: Edit Existing Exam */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-purple-600" />
+                기존 모의고사 회차 정보 수정
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                등록된 모의고사의 제목, 설명, 제한 시간 및 연결된 CSV 파일 정보 등을 변경할 수 있습니다.
+              </p>
+            </div>
+
+            {editExamMsg && (
+              <div className={`p-4 rounded-2xl text-xs font-semibold ${
+                editExamMsg.includes('수정되었습니다') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              }`}>
+                {editExamMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateExam} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  수정할 모의고사 회차 선택
+                </label>
+                <select
+                  value={selectedEditExamId}
+                  onChange={(e) => handleSelectExamToEdit(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  {exams.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  모의고사 제목
+                </label>
+                <input
+                  type="text"
+                  value={editExamTitle}
+                  onChange={(e) => setEditExamTitle(e.target.value)}
+                  placeholder="예: AICE Basic 제1회 실전 모의고사: 퇴사여부 예측"
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  모의고사 설명
+                </label>
+                <textarea
+                  value={editExamDesc}
+                  onChange={(e) => setEditExamDesc(e.target.value)}
+                  rows={3}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    제한시간(분)
+                  </label>
+                  <input
+                    type="number"
+                    value={editExamTimeLimit}
+                    onChange={(e) => setEditExamTimeLimit(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    총 문항 수
+                  </label>
+                  <input
+                    type="number"
+                    value={editExamTotalQuestions}
+                    onChange={(e) => setEditExamTotalQuestions(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    커트라인(점)
+                  </label>
+                  <input
+                    type="number"
+                    value={editExamPassScore}
+                    onChange={(e) => setEditExamPassScore(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  연결된 실습용 CSV 파일 URL (선택)
+                </label>
+                <input
+                  type="text"
+                  value={editExamCsvUrl}
+                  onChange={(e) => setEditExamCsvUrl(e.target.value)}
+                  placeholder="예: /sample_data/customer_data.csv"
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isUpdatingExam}
+                className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>{isUpdatingExam ? '수정사항 저장 중...' : '모의고사 회차 정보 수정 저장하기'}</span>
+              </button>
+            </form>
           </div>
 
-          {examMsg && (
-            <div className={`p-4 rounded-2xl text-xs font-semibold ${
-              examMsg.includes('성공') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-            }`}>
-              {examMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleCreateExam} className="space-y-4">
+          {/* Card 2: Create New Exam */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                모의고사 제목
-              </label>
-              <input
-                type="text"
-                value={newExamTitle}
-                onChange={(e) => setNewExamTitle(e.target.value)}
-                placeholder="예: AICE Basic 제3회 실전 모의고사"
-                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
-              />
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-purple-600" />
+                신규 모의고사 회차 생성
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                새로운 모의고사(예: AICE Basic 제3회 실전 모의고사) 정보를 입력하여 추가하세요.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                모의고사 설명
-              </label>
-              <textarea
-                value={newExamDesc}
-                onChange={(e) => setNewExamDesc(e.target.value)}
-                placeholder="예: 인공지능 응용 및 실무 데이터 전처리 포함 실전 모의고사"
-                rows={3}
-                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
-              />
-            </div>
+            {examMsg && (
+              <div className={`p-4 rounded-2xl text-xs font-semibold ${
+                examMsg.includes('성공') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              }`}>
+                {examMsg}
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <form onSubmit={handleCreateExam} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  제한시간 (분)
+                  모의고사 제목
                 </label>
                 <input
-                  type="number"
-                  value={newExamTimeLimit}
-                  onChange={(e) => setNewExamTimeLimit(Number(e.target.value))}
+                  type="text"
+                  value={newExamTitle}
+                  onChange={(e) => setNewExamTitle(e.target.value)}
+                  placeholder="예: AICE Basic 제3회 실전 모의고사"
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  총 문항 수
+                  모의고사 설명
                 </label>
-                <input
-                  type="number"
-                  value={newExamTotalQuestions}
-                  onChange={(e) => setNewExamTotalQuestions(Number(e.target.value))}
+                <textarea
+                  value={newExamDesc}
+                  onChange={(e) => setNewExamDesc(e.target.value)}
+                  placeholder="예: 인공지능 응용 및 실무 데이터 전처리 포함 실전 모의고사"
+                  rows={3}
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  합격 커트라인 (점)
-                </label>
-                <input
-                  type="number"
-                  value={newExamPassScore}
-                  onChange={(e) => setNewExamPassScore(Number(e.target.value))}
-                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    제한시간(분)
+                  </label>
+                  <input
+                    type="number"
+                    value={newExamTimeLimit}
+                    onChange={(e) => setNewExamTimeLimit(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              disabled={isCreatingExam}
-              className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5"
-            >
-              <Check className="w-4 h-4" />
-              <span>{isCreatingExam ? '회차 생성 중...' : '신규 모의고사 회차 생성하기'}</span>
-            </button>
-          </form>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    총 문항 수
+                  </label>
+                  <input
+                    type="number"
+                    value={newExamTotalQuestions}
+                    onChange={(e) => setNewExamTotalQuestions(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    커트라인(점)
+                  </label>
+                  <input
+                    type="number"
+                    value={newExamPassScore}
+                    onChange={(e) => setNewExamPassScore(Number(e.target.value))}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isCreatingExam}
+                className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>{isCreatingExam ? '회차 생성 중...' : '신규 모의고사 회차 생성하기'}</span>
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
