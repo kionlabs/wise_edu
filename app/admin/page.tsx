@@ -47,7 +47,8 @@ import {
   Edit2,
   Save,
   ListChecks,
-  PlusCircle
+  PlusCircle,
+  FileText
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -1830,6 +1831,32 @@ export default function AdminPage() {
 
             {/* Modal Scrollable Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+              {/* Exam Overview Card (Page 1 Info) */}
+              <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-slate-100 p-5 rounded-2xl border border-indigo-800 shadow-md space-y-3">
+                <div className="flex items-center justify-between border-b border-indigo-800/80 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-indigo-500/20 text-indigo-300 rounded-lg flex items-center justify-center border border-indigo-400/30">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <span className="font-black text-sm text-indigo-200 tracking-tight">
+                      📌 시험 문제 개요 (시험 안내 1페이지 내용)
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-indigo-300 bg-indigo-900/80 px-2.5 py-0.5 rounded-md border border-indigo-700">
+                    학생 시험 UI 1페이지 연동 데이터
+                  </span>
+                </div>
+                {previewExamModal.overview ? (
+                  <div className="text-xs text-indigo-100 whitespace-pre-wrap leading-relaxed font-sans bg-indigo-900/40 p-3.5 rounded-xl border border-indigo-800/50">
+                    {previewExamModal.overview}
+                  </div>
+                ) : (
+                  <div className="text-xs text-indigo-300 italic bg-indigo-900/40 p-3 rounded-xl border border-indigo-800/50">
+                    등록된 문제 개요가 없습니다. (관리자 페이지 [모의고사 회차 관리] 탭에서 개요를 입력할 수 있습니다.)
+                  </div>
+                )}
+              </div>
+
               {isPreviewLoading ? (
                 <div className="py-16 text-center text-slate-500 space-y-2">
                   <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
