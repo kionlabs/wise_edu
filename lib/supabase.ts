@@ -295,6 +295,42 @@ const MOCK_EXAMS: Exam[] = [
 - sulphates: 황산염
 - alcohol: 알코올
 - quality: 와인의 품질`
+  },
+  {
+    id: 'e5555555-5555-5555-5555-555555555555',
+    title: 'AICE Basic 연습문제 3: 은행 고객 이탈 예측',
+    description: '은행 내 고객 이탈에 영향을 미치는 요인을 탐색 및 분석하고 고객의 이탈 여부를 예측하는 AI 모델 구현 연습문제 (15문항)',
+    time_limit_minutes: 60,
+    total_questions: 15,
+    pass_score: 70,
+    created_at: new Date().toISOString(),
+    is_result_released: false,
+    overview: `[AICE Basic 연습문제 3: 은행 고객 이탈 예측 (문제지)]
+
+■ 주제: 은행 고객 이탈 예측
+
+■ 배경:
+최근 금융 산업에서는 경쟁이 심화되면서 기존 고객을 유지하는 것이 신규 고객을 확보하는 것만큼이나 중요한 과제로 떠오르고 있습니다. 특히 디지털 금융 서비스의 확산으로 고객들이 다양한 금융 기관을 쉽게 비교하고 이동할 수 있게 되면서, 고객 이탈 문제는 더욱 빈번하게 발생하고 있습니다. 은행 고객의 이탈은 단순히 한 명의 고객을 잃는 것을 넘어 장기적인 수익 감소로 이어질 수 있기 때문에, 이를 사전에 예측하고 대응하는 것은 매우 중요합니다. 그러나 고객의 이탈 여부는 계좌 잔고, 거래 빈도, 금융 상품 이용 내역, 고객 연령 및 활동 패턴 등 다양한 요인이 복합적으로 작용하여 결정되므로, 단순한 기준만으로 판단하기 어렵습니다. 이러한 이유로 은행에서는 과거 고객 데이터를 활용하여 이탈 가능성이 높은 고객을 사전에 식별하고, 맞춤형 혜택이나 마케팅 전략을 통해 고객을 유지하려는 노력이 필요합니다.
+이를 위해 데이터 분석과 머신러닝 모델을 활용하여 고객의 다양한 금융 활동 데이터를 종합적으로 고려하고, 이를 바탕으로 고객의 이탈 여부를 예측해보고자 합니다.
+
+■ 과제명:
+은행 내 고객 이탈에 영향을 미치는 요인을 탐색 및 분석하고, 고객의 이탈 여부를 예측하는 AI 모델을 구현해보세요.
+
+■ 데이터 컬럼명:
+- RowNumber: 데이터셋의 각 행에 부여된 순번
+- CustomerId: 고객 ID
+- Surname: 고객의 성
+- CreditScore: 신용 점수
+- Geography: 고객의 거주 지역
+- Gender: 성별
+- Age: 나이
+- Tenure: 은행 거래 연수
+- Balance: 계좌 잔액
+- NumOfProducts: 보유한 은행 상품 수
+- HasCrCard: 신용카드 보유 여부 (보유: 1, 미보유: 0)
+- IsActiveMember: 활동 회원 여부 (활동: 1, 미활동: 0)
+- EstimatedSalary: 추정 연봉
+- Exited: 고객 이탈 여부 (이탈: 1, 이탈하지 않음: 0)`
   }
 ];
 
@@ -1069,6 +1105,195 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       answer: '0.3852',
       score: 20,
       explanation: 'Epochs 50, Batch Size 32로 고도화하여 학습한 딥러닝 모델의 개선된 MSE 수치입니다.'
+    }
+  ],
+  'e5555555-5555-5555-5555-555555555555': [
+    {
+      id: 'p501',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 1,
+      title: '알고리즘 유형 선택',
+      description: '본 과제 해결에 알맞은 알고리즘의 유형을 고르시오.',
+      category: 'AI 개념',
+      type: 'single',
+      options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
+      answer: '분류 모형',
+      score: 20,
+      explanation: '고객 이탈 여부(1: 이탈, 0: 미이탈)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
+    },
+    {
+      id: 'p502',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 2,
+      title: '타겟 변수 작성',
+      description: '본 과제의 타겟 변수를 적으세요.',
+      category: '데이터 이해',
+      type: 'text',
+      answer: 'Exited',
+      score: 20,
+      explanation: '예측하고자 하는 목표 변수는 고객 이탈 여부인 Exited입니다.'
+    },
+    {
+      id: 'p503',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 3,
+      title: '학습 제외 변수 선택',
+      description: '다음 변수 중 모델학습에서 제외해야 하는 변수를 고르세요.',
+      category: '데이터 이해',
+      type: 'single',
+      options: ['CustomerId', 'CreditScore', 'Tenure', 'EstimatedSalary'],
+      answer: 'CustomerId',
+      score: 20,
+      explanation: 'CustomerId는 고유 식별값으로 모델 예측 학습에서 제외해야 합니다.'
+    },
+    {
+      id: 'p504',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 4,
+      title: '특정 상품 수 보유 고객 비율 계산',
+      description: '보유한 은행 상품 수(NumOfProducts)가 2개인 고객의 비율(%)을 작성하세요. (정답 작성 시 소수점은 반올림하여 두자리까지 작성, 예: 00.00)',
+      category: '데이터 기술통계',
+      type: 'text',
+      answer: '45.90',
+      score: 20,
+      explanation: 'NumOfProducts가 2인 고객의 비율(%) 계산 결과입니다.'
+    },
+    {
+      id: 'p505',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 5,
+      title: '특정 신용점수 구간 이탈/유지 고객 수 차이 작성',
+      description: '신용 점수(CreditScore)가 705 – 709인 고객 중 은행을 이탈한 고객과 은행을 유지하고 있는 고객의 수의 차이를 작성하세요.',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '12',
+      score: 20,
+      explanation: 'CreditScore 705~709 구간의 이탈 고객과 유지 고객 수의 차이입니다.'
+    },
+    {
+      id: 'p506',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 6,
+      title: '타겟변수 최고 양의 상관관계 변수 선택',
+      description: '타겟변수와 가장 큰 양의 상관관계를 갖는 변수를 고르세요.',
+      category: '상관관계 분석',
+      type: 'single',
+      options: ['Age', 'Balance', 'NumOfProducts', 'IsActiveMember'],
+      answer: 'Age',
+      score: 20,
+      explanation: '타겟 변수 Exited와 양(+)의 상관관계가 가장 높은 변수는 Age입니다.'
+    },
+    {
+      id: 'p507',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 7,
+      title: '이탈 고객 계좌 잔액 중앙값 최댓값 지역 선택',
+      description: '고객 이탈 여부(Exited)에 대한 고객의 거주 지역(Geography)별 고객의 계좌 잔액(Balance)를 시각화하고, 은행을 이탈한 고객들의 계좌 잔액(Balance)의 중앙값이 가장 높은 지역을 고르세요.',
+      category: '데이터 시각화',
+      type: 'single',
+      options: ['France', 'Spain', 'Germany'],
+      answer: 'Germany',
+      score: 20,
+      explanation: '이탈 고객 계좌 잔액 중앙값이 가장 높은 지역은 Germany입니다.'
+    },
+    {
+      id: 'p508',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 8,
+      title: '최장 IQR 가진 은행 상품 수 작성',
+      description: '보유한 은행 상품 수(NumOfProducts)에 따른 고객 나이(Age)를 시각화하고, 가장 긴 IQR을 가진 은행 상품의 수를 작성하세요.',
+      category: '데이터 시각화',
+      type: 'text',
+      answer: '4',
+      score: 20,
+      explanation: 'NumOfProducts별 Age 박스플롯 분석 시 IQR 박스 길이가 가장 긴 상품 수는 4개입니다.'
+    },
+    {
+      id: 'p509',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 9,
+      title: '결측치 대체 후 최빈값 개수 작성',
+      description: '종속변수를 제외한 모든 변수에 대해 결측치가 있는 경우, 주어진 조건대로 결측치를 처리하세요. 데이터 가공 후, 변화된 IsActiveMember의 최빈값의 개수를 작성하세요. (예: 0000)\n- 평균값 대체 대상 컬럼: EstimatedSalary\n- 최빈값 대체 대상 컬럼: EstimatedSalary를 제외한 나머지 컬럼\n※ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '5151',
+      score: 20,
+      explanation: 'IsActiveMember 최빈값 대체 후 산출된 최빈값의 개수입니다.'
+    },
+    {
+      id: 'p510',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 10,
+      title: '이상치 제거 후 남은 데이터 행 개수 작성',
+      description: '다음의 조건에 따라 Age 컬럼의 IQR 기준 이상치를 제거한 후, 남은 데이터의 행 개수를 작성하세요. (예: 0000)\n- 문제 9번에서 가공된 데이터를 기준으로 이상치 처리를 수행하세요.\n- multiplier는 1.5로 설정합니다.\n※ 수행 후 [가공데이터 저장]을 클릭하여 가공된 데이터를 저장하세요.',
+      category: '이상치 처리',
+      type: 'text',
+      answer: '9641',
+      score: 20,
+      explanation: 'Age 이상치 제거 후 남은 최종 데이터 행의 개수입니다.'
+    },
+    {
+      id: 'p511',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 11,
+      title: '머신러닝 모델 비교 (재현율 Recall 기준)',
+      description: '3개의 머신러닝 모델을 다음과 같은 설정으로 학습하고, 이중 재현율 기준 성능이 평균적으로 가장 좋은 것을 고르세요.\n- 작업 데이터 선택: 문제 10번에서 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Input 컬럼: 문제 3번의 정답 변수는 제외 컬럼으로 지정하세요. / 문제 9번의 결측치 처리에 사용된 변수 중 \'변환하기 전의 변수\'는 제외 컬럼으로 지정하세요. / RowNumber 컬럼도 제외 컬럼으로 지정하세요.\n- Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n- 데이터 유형 선택: 종속 변수의 데이터 유형은 모델 유형에 맞게 설정하고, 나머지는 초기 설정값을 사용하세요.\n- ML 모델 선택: KNN, Decision Tree, Random Forest\n- 모델 Parameter 설정: 초기 설정값을 사용하세요.',
+      category: '머신러닝 평가',
+      type: 'single',
+      options: ['KNN', 'Decision Tree', 'Random Forest'],
+      answer: 'Random Forest',
+      score: 20,
+      explanation: 'Random Forest 모델이 평균 재현율(Recall) 성능에서 가장 뛰어납니다.'
+    },
+    {
+      id: 'p512',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 12,
+      title: '딥러닝 모델 최적 에포크 회차 작성',
+      description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 가장 성능이 좋은 모델은 몇 번째 학습인지 작성하세요.\n- 작업 데이터 선택: 문제 10번의 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n- Input 컬럼: 문제 3번 정답 변수 제외 / 문제 9번 변환 전 변수 제외 / RowNumber 제외 / 모든 Object형 변수 인코더 sparse 설정\n- 컬럼 파라미터 설정: 종속변수 유형 모델맞춤, 활성함수 softmax, FC 레이어 1, 레이어 크기 100, 드롭아웃 0, FC 활성함수 relu\n- 학습 파라미터 설정: Epochs 20, Batch Size 128, learning rate 0.001\n- 답안 작성: 모델 저장 후 정수 형태로 작성하세요.',
+      category: '딥러닝 모델링',
+      type: 'text',
+      answer: '18',
+      score: 20,
+      explanation: '딥러닝 학습 과정에서 가장 좋은 성능을 기록한 에포크 회차입니다.'
+    },
+    {
+      id: 'p513',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 13,
+      title: '딥러닝 모델 상위 이탈 영향 변수 선택',
+      description: '문제 12번에서 학습한 딥러닝 모델 분석 결과, 고객이 이탈할 때 영향을 주는 상위 5개의 변수에 해당하는 것을 고르세요.',
+      category: '모델 해석',
+      type: 'single',
+      options: ['EstimatedSalary_IM', 'CreditScore', 'Tenure_IM', 'NumOfProducts'],
+      answer: 'NumOfProducts',
+      score: 20,
+      explanation: '이탈 예측 딥러닝 모델의 상위 5개 변수 영향도 분석 결과 포함되는 컬럼은 NumOfProducts입니다.'
+    },
+    {
+      id: 'p514',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 14,
+      title: '딥러닝 모델 기반 고객 이탈 여부 예측 추론',
+      description: '문제 12번에서 학습한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 고객의 이탈 여부를 예측하세요.\n- Age: 25\n- Balance: 100000\n- CreditScore: 0\n- EstimatedSalary_IM: 150000\n- Gender: Female\n- Geography: France\n- HasCrCard: 1\n- IsActiveMember_IM: 0\n- NumOfProducts: 1\n- Surname_IM: Hargrave\n- Tenure_IM: 2',
+      category: '모델 추론',
+      type: 'single',
+      options: ['1: 이탈함', '0: 이탈하지 않음'],
+      answer: '0: 이탈하지 않음',
+      score: 20,
+      explanation: '제시된 고객 특성 입력 시 예측된 결과는 0(이탈하지 않음)입니다.'
+    },
+    {
+      id: 'p515',
+      exam_id: 'e5555555-5555-5555-5555-555555555555',
+      order_num: 15,
+      title: '딥러닝 모델 파라미터 고도화 및 Accuracy 작성',
+      description: '문제 12번에서 학습한 딥러닝 모델을 고도화할 예정입니다. 문항 12번의 딥러닝 파라미터 중 "전체 데이터를 학습하는 횟수"를 의미하는 파라미터를 50으로 설정하고, 또한 드롭아웃은 0.4로 설정하고, FC 레이어의 크기는 64로 설정하여 모델을 학습하세요. 학습 후 모델의 Accuracy를 작성하세요.\n- 문제에 제시된 요구사항 외 나머지 설정은 12번 문항과 동일한 설정으로 학습합니다.\n- 문제에서 제시된 파라미터만 변경하여 모델을 고도화하세요.\n- 답안은 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)',
+      category: '모델 고도화',
+      type: 'text',
+      answer: '0.8540',
+      score: 20,
+      explanation: '파라미터 고도화 후 최종 산출된 딥러닝 모델의 Accuracy 수치입니다.'
     }
   ]
 };
