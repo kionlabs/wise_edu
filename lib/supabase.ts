@@ -331,6 +331,48 @@ const MOCK_EXAMS: Exam[] = [
 - IsActiveMember: 활동 회원 여부 (활동: 1, 미활동: 0)
 - EstimatedSalary: 추정 연봉
 - Exited: 고객 이탈 여부 (이탈: 1, 이탈하지 않음: 0)`
+  },
+  {
+    id: 'f6666666-6666-6666-6666-666666666666',
+    title: 'AICE Basic 연습문제 4: 학생 성적 예측',
+    description: '다양한 학습 요인을 통해 학생의 최종 시험 점수를 예측하는 AI 모델 구현 연습문제 (15문항)',
+    time_limit_minutes: 60,
+    total_questions: 15,
+    pass_score: 70,
+    created_at: new Date().toISOString(),
+    is_result_released: false,
+    overview: `[AICE Basic 연습문제 4: 학생 성적 예측 (문제지)]
+
+■ 주제: 학생 성적 예측
+
+■ 배경:
+최근 교육 분야에서는 단순히 시험 결과만으로 학생의 학업 성취도를 평가하는 것을 넘어, 학습 과정에서의 다양한 요인을 종합적으로 고려하려는 시도가 증가하고 있습니다. 학생의 성적은 단순히 공부 시간뿐만 아니라 출석률, 이전 성적, 학습 습관 등 여러 요인이 복합적으로 작용하여 결정됩니다. 따라서 특정 하나의 기준만으로 성적을 예측하거나 학업 성취도를 판단하기에는 한계가 있습니다. 이러한 이유로 학생의 다양한 학습 데이터를 기반으로 성적을 예측할 수 있다면, 학습 부진 학생을 조기에 파악하고 맞춤형 학습 지원을 제공하는 데에 도움이 될 수 있습니다. 또한 교육 기관에서는 이를 통해 보다 효과적인 교육 전략을 수립할 수 있습니다.
+이를 위해 데이터 분석과 머신러닝 모델을 활용하여 학생의 다양한 학습 관련 지표를 종합적으로 고려하고, 이를 바탕으로 학생의 성적을 예측해보고자 합니다.
+
+■ 과제명:
+다양한 학습 요인을 통해 학생의 최종 시험 점수를 예측하는 AI 모델을 구현하세요.
+
+■ 데이터 컬럼명:
+- Hours_Studied: 주당 공부 시간
+- Attendance: 수업 출석률
+- Parental_Involvement: 부모의 참여 수준
+- Access_to_Resources: 교육 자원 이용 가능 여부
+- Extracurricular_Activities: 비교과 활동 참여 여부
+- Sleep_Hours: 평균 수면 시간
+- Previous_Scores: 이전 시험 점수
+- Motivation_Level: 학생의 학습 동기 수준
+- Internet_Access: 인터넷 접속 가능 여부
+- Tutoring_Sessions: 튜터링 참여 횟수
+- Family_Income: 가정 소득 수준
+- Teacher_Quality: 교사의 수업 질
+- School_Type: 학교 유형
+- Peer_Influence: 또래가 학업 성취에 미치는 영향
+- Physical_Activity: 주간 평균 신체 활동 시간
+- Learning_Disabilities: 학습 장애 여부
+- Parental_Education_Level: 부모의 최종 학력
+- Distance_from_Home: 집과 학교 사이 거리
+- Gender: 학생의 성별
+- Exam_Score: 최종 시험 점수`
   }
 ];
 
@@ -1294,6 +1336,195 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       answer: '0.8540',
       score: 20,
       explanation: '파라미터 고도화 후 최종 산출된 딥러닝 모델의 Accuracy 수치입니다.'
+    }
+  ],
+  'f6666666-6666-6666-6666-666666666666': [
+    {
+      id: 'p601',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 1,
+      title: '알고리즘 유형 선택',
+      description: '본 과제 해결에 알맞은 알고리즘의 유형을 고르시오.',
+      category: 'AI 개념',
+      type: 'single',
+      options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
+      answer: '회귀 모형',
+      score: 20,
+      explanation: '최종 시험 점수(Exam_Score)는 연속형 수치 데이터를 예측하는 문제이므로 회귀(Regression) 모형이 적절합니다.'
+    },
+    {
+      id: 'p602',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 2,
+      title: '문자형 변수 개수 작성',
+      description: '문자형 변수의 개수를 작성하세요.',
+      category: '데이터 이해',
+      type: 'text',
+      answer: '12',
+      score: 20,
+      explanation: '범주형/문자형(Object/String) 데이터 유형을 가진 변수의 총 개수입니다.'
+    },
+    {
+      id: 'p603',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 3,
+      title: '종속변수 기술통계량 비교',
+      description: '본 과제의 종속변수의 기술통계량을 확인하고, 최빈값 개수보다 큰 값을 가지는 것을 고르세요.',
+      category: '데이터 기술통계',
+      type: 'single',
+      options: ['왜도', '데이터의 총합', '제2사분위수', '제4사분위수'],
+      answer: '데이터의 총합',
+      score: 20,
+      explanation: 'Exam_Score 기술통계량 중 최빈값 개수 수치보다 큰 값을 가지는 지표는 데이터의 총합입니다.'
+    },
+    {
+      id: 'p604',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 4,
+      title: '최고 결측치 비율 작성',
+      description: '다음 중 결측치가 가장 많은 변수의 결측치 비율을 작성하세요. (예: 0.00)',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '0.05',
+      score: 20,
+      explanation: '가장 많은 결측치를 보유한 컬럼의 결측치 비율 수치입니다.'
+    },
+    {
+      id: 'p605',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 5,
+      title: '수치형 변수 최고 상관관계 조합 선택',
+      description: '수치형 변수들의 상관관계를 확인하고 가장 큰 상관관계를 가지는 조합을 고르세요.',
+      category: '상관관계 분석',
+      type: 'single',
+      options: ['Hours_Studied, Exam_Score', 'Exam_Score, Tutoring_Sessions', 'Exam_Score, Attendance', 'Previous_Scores, Exam_Score'],
+      answer: 'Previous_Scores, Exam_Score',
+      score: 20,
+      explanation: '상관계수 절댓값이 가장 높은 수치형 변수 조합은 Previous_Scores와 Exam_Score입니다.'
+    },
+    {
+      id: 'p606',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 6,
+      title: '특정 공부시간 이상 여학생 수 작성',
+      description: '주당 공부 시간(Hours_Studied)이 38시간 이상인 여학생의 수를 작성하세요.',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '142',
+      score: 20,
+      explanation: 'Hours_Studied >= 38 및 Gender == Female 조건의 데이터 수입니다.'
+    },
+    {
+      id: 'p607',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 7,
+      title: '특정 수면시간 학생의 최다 학습동기 수준 선택',
+      description: '평균 수면 시간(Sleep_Hours)이 7시간인 학생들 중 가장 많은 수를 차지하는 학생들의 학습 동기 수준(Motivation_Level)을 고르세요.',
+      category: '데이터 탐색',
+      type: 'single',
+      options: ['Low', 'Medium', 'High'],
+      answer: 'Medium',
+      score: 20,
+      explanation: 'Sleep_Hours가 7인 학생 집단 중 Motivation_Level 비율이 가장 높은 범주는 Medium입니다.'
+    },
+    {
+      id: 'p608',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 8,
+      title: '이상치 미존재 조합 선택',
+      description: '학교 유형(School_Type)별 인터넷 접속 가능 여부(Internet_Access)에 따른 주당 공부 시간(Hours_Studied)에 대해 시각화하세요. 이상치가 존재하지 않는 인터넷 접속 가능 여부(Internet_Access), 학교 유형(School_Type) 조합을 고르세요.',
+      category: '데이터 시각화',
+      type: 'single',
+      options: ['Yes, Public', 'Yes, Private', 'No, Public', 'No, Private'],
+      answer: 'No, Private',
+      score: 20,
+      explanation: 'Hours_Studied 시각화 박스플롯 결과 이상치가 없는 범주 조합은 No, Private입니다.'
+    },
+    {
+      id: 'p609',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 9,
+      title: '결측치 최빈값 대체 후 최빈값 비율 작성',
+      description: '종속변수를 제외한 모든 변수에 대해 결측치가 있는 경우, 최빈값으로 결측치를 대체하세요. 데이터 가공 후, 변화된 Parental_Education_Level의 최빈값의 비율을 작성하세요. (예: 00.00)\n- 결측치 대체 후에는 결측치 처리 전의 컬럼은 삭제합니다.\n※ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '0.48',
+      score: 20,
+      explanation: 'Parental_Education_Level 최빈값 대체 후 최빈값의 비율 수치입니다.'
+    },
+    {
+      id: 'p610',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 10,
+      title: '인코딩 적용 후 전체 컬럼 수 작성',
+      description: '다음의 조건에 따라 인코딩을 수행하고, 가공 후 데이터의 전체 컬럼 수를 작성하세요. (예: 00)\n- 문제 9번에서 가공된 데이터를 기준으로 인코딩을 수행하세요.\n- Ordinal 인코딩: Parental_Involvement, Access_to_Resources, Motivation_Level, Family_Income, Teacher_Quality\n- One-hot 인코딩: Extracurricular_Activities, Internet_Access, Learning_Disabilities\n※ 수행 후 [가공데이터 저장]을 클릭하여 가공된 데이터를 저장하세요.',
+      category: '피처 인코딩',
+      type: 'text',
+      answer: '23',
+      score: 20,
+      explanation: '인코딩 적용 및 기존 컬럼 삭제 후 최종 데이터셋의 전체 컬럼 수입니다.'
+    },
+    {
+      id: 'p611',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 11,
+      title: '머신러닝 모델 비교 (설명력 R2 기준)',
+      description: '3개의 머신러닝 모델을 다음과 같은 설정으로 학습하고, 이중 설명력 지표 기준 성능이 평균적으로 가장 좋은 것을 고르세요.\n- 작업 데이터 선택: 문제 10번에서 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Input 컬럼: 별도의 제외 컬럼은 없이 기본 설정을 유지하세요.\n- Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n- 데이터 유형 선택: 종속 변수의 데이터 유형은 모델 유형에 맞게 설정하고, 나머지는 초기 설정값을 사용하세요.\n- ML 모델 선택: Linear Regression, Random Forest, LightGBM',
+      category: '머신러닝 평가',
+      type: 'single',
+      options: ['Linear Regression', 'Random Forest', 'LightGBM'],
+      answer: 'Linear Regression',
+      score: 20,
+      explanation: 'Linear Regression 모델이 R2 설명력 성능에서 평균적으로 가장 우수한 성적을 냅니다.'
+    },
+    {
+      id: 'p612',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 12,
+      title: '딥러닝 모델 학습 및 MAE 수치 작성',
+      description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 학습된 모델의 MAE를 작성하세요.\n- 작업 데이터 선택: 문제 10번 신규 저장 데이터\n- Output 컬럼: 종속 변수 (Exam_Score)\n- Input 컬럼: 모든 Object형 변수의 인코더를 sparse로 설정\n- 컬럼 파라미터 설정: 활성함수 linear, FC 레이어 수 1, FC 레이어 크기 256, 드롭아웃 0, FC 활성함수 relu\n- 학습 파라미터 설정: Epochs 30, Batch Size 128, learning rate 0.001\n- 답안 작성: 소수점 네번째 자리까지 반올림 작성 (예: 0.0000)',
+      category: '딥러닝 모델링',
+      type: 'text',
+      answer: '1.8521',
+      score: 20,
+      explanation: '딥러닝 모델 학습 후 산출된 MAE 검증 수치입니다.'
+    },
+    {
+      id: 'p613',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 13,
+      title: '딥러닝 모델 상위 영향 변수 미포함 항목 선택',
+      description: '문제 12번에서 학습한 딥러닝 모델 분석 결과, 학생 최종 성적 예측에 영향을 주는 상위 5개의 변수에 해당하지 않는 것을 고르세요.',
+      category: '모델 해석',
+      type: 'single',
+      options: ['Hours_Studied', 'Sleep_Hours', 'Parental_Involvement_OE', 'Attendance'],
+      answer: 'Sleep_Hours',
+      score: 20,
+      explanation: '학생 성적 예측 딥러닝 모델 상위 5개 변수 중 Sleep_Hours는 포함되지 않습니다.'
+    },
+    {
+      id: 'p614',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 14,
+      title: '딥러닝 모델 기반 학생 최종 점수 예측 추론',
+      description: '문제 12번에서 학습한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 학생 최종 점수를 예측하여 정수 형태로 작성하세요.\n- Access_to_Resources_OE: 0, Attendance: 80, Distance_from_Home_IM: Moderate\n- Extracurricular_Activities_No: 0, Extracurricular_Activities_Yes: 1, Family_Income_OE: 1\n- Gender: Female, Hours_Studied: 18, Internet_Access_No: 0, Internet_Access_Yes: 1\n- Learning_Disabilities_No: 1, Learning_Disabilities_Yes: 0, Motivation_Level_OE: 1\n- Parental_Education_Level_IM: High School, Parental_Involvement_OE: 0\n- Peer_Influence: Positive, Physical_Activity: 1, Previous_Scores: 78\n- School_Type: Public, Sleep_Hours: 7, Teacher_Quality_IM_OE: 0, Tutoring_Sessions: 0',
+      category: '모델 추론',
+      type: 'text',
+      answer: '72',
+      score: 20,
+      explanation: '지정된 학생 조건 입력 시 예측되는 최종 시험 점수 정수 수치입니다.'
+    },
+    {
+      id: 'p615',
+      exam_id: 'f6666666-6666-6666-6666-666666666666',
+      order_num: 15,
+      title: '딥러닝 모델 파라미터 고도화 및 MAE 작성',
+      description: '문제 12번에서 학습한 딥러닝 모델을 고도화할 예정입니다. "모델의 가중치를 업데이트하기 위해 손실함수를 최소화하는 방식"을 sgd로 설정하고 "한 번의 가중치 업데이트 시 얼마나 이동할지를 결정하는 값"은 0.1로 설정하세요. 또한 모델 성능이 10번 연속으로 개선되지 않을 때 학습을 조기 종료하도록 설정하여 모델을 학습하세요. 개선된 MAE를 작성하세요.\n- 문제에 제시된 요구사항 외 나머지 설정은 12번 문항과 동일한 설정으로 학습합니다.\n- 문제에서 제시된 파라미터만 변경하여 모델을 고도화하세요.\n- 답안은 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)',
+      category: '모델 고도화',
+      type: 'text',
+      answer: '1.6210',
+      score: 20,
+      explanation: 'Optimizer=sgd, Learning Rate=0.1, Early Stopping Patience=10 고도화 후 산출된 MAE 수치입니다.'
     }
   ]
 };
