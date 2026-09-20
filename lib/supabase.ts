@@ -260,6 +260,41 @@ const MOCK_EXAMS: Exam[] = [
 - Oldpeak: ST 하강 정도
 - ST_Slope: ST 구간 기울기
 - HeartDisease: 심장병 레이블 (심장병 유: 1, 심장병 무: 0)`
+  },
+  {
+    id: 'd4444444-4444-4444-4444-444444444444',
+    title: 'AICE Basic 연습문제 2: 와인 품질 예측',
+    description: '와인의 여러 화학적 특성을 담은 데이터를 통해 와인의 품질을 예측하는 AI 모델 구현 연습문제 (15문항)',
+    time_limit_minutes: 60,
+    total_questions: 15,
+    pass_score: 70,
+    created_at: new Date().toISOString(),
+    is_result_released: false,
+    overview: `[AICE Basic 연습문제 2: 와인 품질 예측 (문제지)]
+
+■ 주제: 와인 품질 예측
+
+■ 배경:
+최근에는 와인 생산 과정에서도 데이터 기반 품질 관리의 중요성이 점점 커지고 있습니다. 동일한 포도 품종을 사용하더라도 발효 과정, 화학적 성분, 저장 환경 등에 따라 와인의 맛과 향, 전반적인 품질이 달라질 수 있습니다.
+와인의 품질은 산도, 당도, 알코올 함량, 황 함량 등 여러 화학적 특성이 복합적으로 작용하여 결정되기 때문에 단순히 하나의 기준만으로 품질을 판단하기 어렵습니다. 이러한 이유로 와인 품질 평가는 일반적으로 전문가의 감각 평가에 의존하는 경우가 많지만, 이는 주관적인 요소가 개입될 수 있다는 한계가 있습니다.
+만약 와인의 화학적 특성 데이터를 기반으로 품질을 예측할 수 있다면, 생산 단계에서부터 품질을 보다 체계적으로 관리하고 일정한 품질을 유지하는 데 도움을 줄 수 있을 것입니다. 이를 위해 데이터 분석과 머신러닝 모델을 활용하여 와인의 다양한 화학적 특성을 종합적으로 고려하고, 이를 바탕으로 와인의 품질을 예측해보고자 합니다.
+
+■ 과제명:
+와인의 여러 화학적 특성을 담은 데이터를 통해 와인의 품질을 예측하는 AI 모델을 구현해보세요.
+
+■ 데이터 컬럼명:
+- fixed acidity: 고정산도
+- volatile acidity: 휘발성산도
+- citric acid: 구연산
+- residual sugar: 잔류당
+- chlorides: 염화물
+- free sulfur dioxide: 유리 이산화황
+- total sulfur dioxide: 총 이산화황
+- density: 밀도
+- pH: pH
+- sulphates: 황산염
+- alcohol: 알코올
+- quality: 와인의 품질`
   }
 ];
 
@@ -846,6 +881,194 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       answer: '1: 심장병 있음',
       score: 20,
       explanation: '지정된 신규 환자 특성을 입력하여 예측된 결과는 1(심장병 있음)입니다.'
+    }
+  ],
+  'd4444444-4444-4444-4444-444444444444': [
+    {
+      id: 'p401',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 1,
+      title: '타겟 변수 작성',
+      description: '본 과제의 타겟 변수를 적으세요.',
+      category: '데이터 이해',
+      type: 'text',
+      answer: 'quality',
+      score: 20,
+      explanation: '예측하고자 하는 목표 변수는 와인의 품질인 quality입니다.'
+    },
+    {
+      id: 'p402',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 2,
+      title: '중복 행 비율 계산',
+      description: '중복 행이 차지하는 비율을 반올림하여 소수점 둘째자리까지 작성하세요. (예: 00.00)',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '15.65',
+      score: 20,
+      explanation: '데이터셋 내 중복 행(Duplicate rows)이 차지하는 비율 계산 결과입니다.'
+    },
+    {
+      id: 'p403',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 3,
+      title: '결측치 최솟값 컬럼 선택',
+      description: '결측값이 가장 적은 컬럼을 고르세요.',
+      category: '데이터 탐색',
+      type: 'single',
+      options: ['fixed acidity', 'volatile acidity', 'free sulfur dioxide', 'alcohol'],
+      answer: 'alcohol',
+      score: 20,
+      explanation: '제시된 컬럼 중 결측치가 가장 적은 컬럼은 alcohol입니다.'
+    },
+    {
+      id: 'p404',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 4,
+      title: '제3분위수 최댓값 변수 선택',
+      description: '다음의 변수들의 제3분위수를 확인하고 가장 큰 값을 가지는 변수를 고르세요.',
+      category: '데이터 기술통계',
+      type: 'single',
+      options: ['free sulfur dioxide', 'total sulfur dioxide', 'pH', 'alcohol'],
+      answer: 'total sulfur dioxide',
+      score: 20,
+      explanation: '제시된 변수들 중 제3분위수(75%) 수치가 가장 큰 변수는 total sulfur dioxide입니다.'
+    },
+    {
+      id: 'p405',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 5,
+      title: '수치형 변수 최고 상관관계 조합 선택',
+      description: '수치형 변수들의 상관관계를 확인하고, 가장 큰 상관관계를 가지는 조합을 고르세요.',
+      category: '상관관계 분석',
+      type: 'single',
+      options: ['pH, fixed acidity', 'density, fixed acidity', 'citric acid, fixed acidity', 'free sulfur dioxide, total sulfur dioxide'],
+      answer: 'free sulfur dioxide, total sulfur dioxide',
+      score: 20,
+      explanation: '상관계수 절댓값이 가장 큰 수치형 변수 조합은 free sulfur dioxide와 total sulfur dioxide입니다.'
+    },
+    {
+      id: 'p406',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 6,
+      title: '상단경계 최댓값 품질 등급 파악',
+      description: '와인의 품질(quality) 별 구연산(citric acid)을 시각화하고 상단경계가 가장 높은 품질을 작성하세요.',
+      category: '데이터 시각화',
+      type: 'text',
+      answer: '8',
+      score: 20,
+      explanation: 'quality별 citric acid 시각화 결과 상단경계가 가장 높은 quality 등급은 8입니다.'
+    },
+    {
+      id: 'p407',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 7,
+      title: '최다 빈도 품질 등급 파악',
+      description: '시각화 분석에서 품질(quality)의 빈도 분포를 시각화한 후, 가장 많은 데이터를 가진 품질 등급을 작성하세요.',
+      category: '데이터 시각화',
+      type: 'text',
+      answer: '5',
+      score: 20,
+      explanation: 'quality 빈도 분포 시각화 시 가장 많은 데이터를 가진 품질 등급은 5입니다.'
+    },
+    {
+      id: 'p408',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 8,
+      title: '특정 품질 와인의 최다 알코올 범위 선택',
+      description: '품질(quality)이 6인 와인이 가장 많이 존재하는 알코올(alcohol)의 범위를 고르세요.',
+      category: '데이터 탐색',
+      type: 'single',
+      options: ['9 ~ 9.19', '9.2 ~ 9.39', '9.4 ~ 9.59', '9.6 ~ 9.79'],
+      answer: '9.4 ~ 9.59',
+      score: 20,
+      explanation: 'quality가 6인 데이터 중 alcohol 분포가 가장 많은 구간은 9.4 ~ 9.59입니다.'
+    },
+    {
+      id: 'p409',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 9,
+      title: '결측치 행 삭제 후 데이터 개수 작성',
+      description: '종속변수를 제외한 모든 변수에 대해 결측치가 존재하는 행을 삭제하세요. 모든 결측치 처리를 마치고 변화된 전체 데이터 행 개수를 작성하세요. (예: 0000)\n※ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '1590',
+      score: 20,
+      explanation: '결측치 행 삭제 후 남아있는 전체 데이터 행 개수입니다.'
+    },
+    {
+      id: 'p410',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 10,
+      title: '피처 스케일링 후 제1사분위수 작성',
+      description: '다음의 컬럼들에 대해 지정된 Scale strategy를 적용하고, pH의 변화된 제1사분위값을 작성하세요. 단, 문제 9번에서 가공된 데이터 기반으로 Scale을 조정하세요.\n- 표준화 적용: free sulfur dioxide, residual sugar, total sulfur dioxide\n- 최대-최소 정규화 적용: pH\n※ 수행 후 [가공데이터 저장]을 클릭하여 가공된 데이터를 저장하세요.\n※ 정답 작성 시 소수점은 반올림하여 소수점 아래 두자리까지 작성하세요. (예: 0.00)',
+      category: '피처 스케일링',
+      type: 'text',
+      answer: '0.37',
+      score: 20,
+      explanation: 'pH 컬럼 정규화 적용 후 제1사분위수 수치입니다.'
+    },
+    {
+      id: 'p411',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 11,
+      title: '머신러닝 모델 비교 (MAE 기준)',
+      description: '3개의 머신러닝 모델을 다음과 같은 설정으로 학습하고, 이중 MAE 기준 성능이 평균적으로 가장 좋은 것을 고르세요.\n- 작업 데이터 선택: 문제 10번에서 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Input 컬럼: 문제 10번의 스케일 조정에 사용된 변수 중 \'변환하기 전의 변수\'는 제외 컬럼으로 지정하세요.\n- Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n- 데이터 유형 선택: 종속 변수의 데이터 유형은 모델 유형에 맞게 설정하고, 나머지는 초기 설정값을 사용하세요.\n- ML 모델 선택: Linear Regression, Decision Tree, Random Forest\n- 모델 Parameter 설정: 초기 설정값을 사용하세요.',
+      category: '머신러닝 평가',
+      type: 'single',
+      options: ['Linear Regression', 'Decision Tree', 'Random Forest'],
+      answer: 'Random Forest',
+      score: 20,
+      explanation: 'Random Forest 모델이 평균 MAE 평가 지표에서 가장 우수한 성능을 나타냅니다.'
+    },
+    {
+      id: 'p412',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 12,
+      title: '딥러닝 모델 학습 및 MSE 수치 작성',
+      description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 학습된 모델의 MSE를 작성하세요.\n- 작업 데이터 선택: 문제 10번의 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n- Input 컬럼: 문제 10번의 스케일 조정에 사용된 변수 중 \'변환하기 전의 변수\'는 제외 컬럼으로 지정하세요.\n- 컬럼 파라미터 설정: 종속변수의 데이터 유형은 모델 유형에 맞게 설정하세요. 활성함수: linear, FC 레이어 수: 1, FC 레이어 크기: 64, 드롭아웃: 0, FC 활성함수: relu\n- 학습 파라미터 설정: Epochs: 10, Batch Size: 64, learning rate: 0.001, 그 외 초기 설정값을 사용하세요.\n- 답안 작성: 모델 학습 후 오른쪽 상단의 [모델 저장]기능을 통해 모델을 저장하세요. 정답은 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)',
+      category: '딥러닝 모델링',
+      type: 'text',
+      answer: '0.4215',
+      score: 20,
+      explanation: '설정 파라미터로 학습 후 산출된 딥러닝 모델의 MSE 평가 수치입니다.'
+    },
+    {
+      id: 'p413',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 13,
+      title: '딥러닝 모델 상위 영향 변수 선택',
+      description: '문제 12번에서 학습한 딥러닝 모델 분석 결과, 와인 품질 예측에 영향을 주는 상위 5개의 변수에 해당하는 것을 고르세요.',
+      category: '모델 해석',
+      type: 'single',
+      options: ['citric acid', 'alcohol', 'density', 'residual sugar_SS'],
+      answer: 'alcohol',
+      score: 20,
+      explanation: '딥러닝 모델 영향도 분석 결과 상위 5개 변수에 포함되는 컬럼은 alcohol입니다.'
+    },
+    {
+      id: 'p414',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 14,
+      title: '딥러닝 모델 기반 와인 품질 예측 추론',
+      description: '문제 12번에서 학습한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 와인의 품질을 예측하세요. 정답은 반올림하여 정수로 작성하세요. (예: 0)\n- alcohol: 10.42\n- chlorides: 0\n- citric acid: 0\n- density: 1\n- fixed acidity: 4.6\n- free sulfur dioxide_SS: 0\n- pH_MS: 0.4\n- residual sugar_SS: 0\n- sulphates: 0.33\n- total sulfur dioxide_SS: 0\n- volatile acidity: 0.5',
+      category: '모델 추론',
+      type: 'text',
+      answer: '6',
+      score: 20,
+      explanation: '입력 조건으로 예측된 와인 품질 정수 수치입니다.'
+    },
+    {
+      id: 'p415',
+      exam_id: 'd4444444-4444-4444-4444-444444444444',
+      order_num: 15,
+      title: '딥러닝 모델 파라미터 고도화 및 MSE 작성',
+      description: '문제 12번에서 학습한 딥러닝 모델을 고도화할 예정입니다. 문항 12번의 딥러닝 파라미터 중 "전체 데이터를 학습하는 횟수"를 의미하는 파라미터를 50으로 설정하고, "1회 가중치 업데이트에 사용하는 데이터 수"를 32로 설정하여 모델을 학습하세요. 개선된 MSE는 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)\n- 문제에 제시된 요구사항 외 나머지 설정은 12번 문항과 동일한 설정으로 학습합니다.\n- 문제에서 제시된 파라미터만 변경하여 모델을 고도화하세요.',
+      category: '모델 고도화',
+      type: 'text',
+      answer: '0.3852',
+      score: 20,
+      explanation: 'Epochs 50, Batch Size 32로 고도화하여 학습한 딥러닝 모델의 개선된 MSE 수치입니다.'
     }
   ]
 };
