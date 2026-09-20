@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { fetchAllSubmissions, fetchProblemsByExamId, fetchExamById } from '@/lib/supabase';
+import { fetchAllSubmissions, fetchProblemsByExamId, fetchExamById, checkAnswerCorrect } from '@/lib/supabase';
 import { Submission, Problem, Exam } from '@/types/database';
 import { 
   CheckCircle2, 
@@ -187,9 +187,9 @@ function ResultContent() {
       {/* Problems Breakdown List */}
       <div className="space-y-6">
         {problems.map((prob, idx) => {
-          const userAns = (submission.answers[prob.id] || '').trim();
-          const correctAns = (prob.answer || '').trim();
-          const isCorrect = userAns === correctAns;
+          const userAns = submission.answers[prob.id] || '';
+          const correctAns = prob.answer || '';
+          const isCorrect = checkAnswerCorrect(userAns, correctAns, prob);
 
           return (
             <div

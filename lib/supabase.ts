@@ -790,7 +790,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '분류 모형',
       score: 6,
-      explanation: '심장병 여부(1: 심장병 유, 0: 심장병 무)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
+      explanation: '본 과제(심장병 여부 예측: 1: 심장병 유, 0: 심장병 무)는 범주형 타겟변수를 예측하는 분류 문제 모형입니다. (PDF 답안: 2번 분류 모형)'
     },
     {
       id: 'p302',
@@ -802,169 +802,169 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: 'HeartDisease',
       score: 6,
-      explanation: '예측하고자 하는 목표 변수는 심장병 여부인 HeartDisease입니다.'
+      explanation: '예측하고자 하는 목표 타겟 변수는 HeartDisease입니다. (PDF 답안: HeartDisease)'
     },
     {
       id: 'p303',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 3,
       title: '수치형 변수 개수 파악',
-      description: '데이터 유형이 수치형(Numerical)인 변수의 개수를 작성하세요.',
+      description: '수치형 변수의 개수를 적으세요.',
       category: '데이터 탐색',
       type: 'text',
-      answer: '6',
+      answer: '7',
       score: 6,
-      explanation: 'Age, RestingBP, Cholesterol, FastingBS, MaxHR, Oldpeak 총 6개 수치형 변수입니다.'
+      explanation: '데이터셋의 수치형 변수 개수는 총 7개입니다. (PDF 답안: 7)'
     },
     {
       id: 'p304',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 4,
-      title: '기술통계 지표 선택',
-      description: '수치형 변수의 중심 경향성을 파악하기 위해 사용하는 대표적인 지표 중 하나로, 데이터를 크기 순으로 정렬했을 때 가장 작은 값에 해당하는 것을 고르세요.',
+      title: 'MaxHR 통계량 선택',
+      description: 'MaxHR 컬럼에서 가장 작은 값을 가지는 통계량을 고르세요.',
       category: '데이터 기술통계',
       type: 'single',
       options: ['최소값', '중위수', '표준편차', '제1분위수'],
-      answer: '최소값',
+      answer: '표준편차',
       score: 6,
-      explanation: '데이터 정렬 시 가장 작은 위치의 값은 최소값(Min)입니다.'
+      explanation: 'MaxHR 컬럼에서 통계량 수치가 가장 작은 값은 표준편차입니다. (PDF 답안: 3번 표준편차)'
     },
     {
       id: 'p305',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 5,
-      title: '특정 변수 표준편차 계산',
-      description: '휴식 시 혈압(RestingBP) 변수의 표준편차를 소수점 아래 두 자리까지 작성하세요. (예: 00.00)',
-      category: '데이터 기술통계',
+      title: '흉통 유형(ChestPainType) NAP 비율 작성',
+      description: '흉통 유형(ChestPainType)이 NAP인 값의 비율(%)을 작성하세요. (예: 00.00)',
+      category: '데이터 탐색',
       type: 'text',
-      answer: '22.11',
+      answer: '21.90',
       score: 6,
-      explanation: 'RestingBP 컬럼 데이터의 표준편차 계산 결과입니다.'
+      explanation: 'ChestPainType이 NAP인 데이터의 비율은 21.90%입니다. (PDF 답안: 21.90)'
     },
     {
       id: 'p306',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 6,
-      title: '특정 조건 데이터 개수 구하기',
-      description: '휴식 시 혈압(RestingBP)이 170 이상인 환자의 수를 작성하세요.',
-      category: '데이터 탐색',
+      title: 'Age 60~61세 심장병 유무 환자 수 차이 작성',
+      description: '심장병 레이블(HeartDisease)에 따른 환자의 나이(Age) 분포를 시각화하고, 환자의 나이(Age)가 60~61에 속하는 환자 중 심장병이 있는 환자와 없는 환자의 수의 차이를 작성하세요.',
+      category: '데이터 시각화',
       type: 'text',
-      answer: '18',
+      answer: '37',
       score: 6,
-      explanation: 'RestingBP >= 170 조건을 만족하는 데이터의 총 개수는 18개입니다.'
+      explanation: '환자의 나이가 60~61세인 환자 중 심장병 유/무 환자 수 차이는 37명입니다. (PDF 답안: 37)'
     },
     {
       id: 'p307',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 7,
-      title: '왜도(Skewness) 최대 변수 선택',
-      description: '다음 수치형 변수 중 왜도(Skewness) 값이 가장 큰 변수를 고르세요.',
-      category: '데이터 기술통계',
+      title: 'HeartDisease와 가장 낮은 상관관계 변수 선택',
+      description: '심장병 레이블(HeartDisease) 컬럼과 가장 낮은 상관관계를 갖는 변수를 고르세요.',
+      category: '상관관계 분석',
       type: 'single',
       options: ['Age', 'MaxHR', 'Oldpeak', 'RestingBP'],
       answer: 'RestingBP',
       score: 6,
-      explanation: '제시된 변수들 중 분포의 비대칭도(왜도)가 가장 높은 변수는 RestingBP입니다.'
+      explanation: 'HeartDisease 컬럼과 상관관계가 가장 낮은 변수는 RestingBP입니다. (PDF 답안: 4번 RestingBP)'
     },
     {
       id: 'p308',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 8,
-      title: '흉통 유형(ChestPainType) 최빈값 탐색',
-      description: '흉통 유형(ChestPainType) 중 가장 빈도수가 적은(최솟값) 유형을 고르세요.',
-      category: '데이터 탐색',
+      title: 'ChestPainType 별 IQR 가장 긴 유형 선택',
+      description: '흉통 유형(ChestPainType) 별 환자의 나이(Age)를 시각화하고 IQR이 가장 긴 흉통 유형을 고르세요.',
+      category: '데이터 시각화',
       type: 'single',
       options: ['ATA', 'NAP', 'ASY', 'TA'],
       answer: 'TA',
       score: 6,
-      explanation: 'ChestPainType 변수의 카테고리 중 빈도수가 가장 적은 유형은 TA(Typical Angina)입니다.'
+      explanation: 'ChestPainType 별 Age IQR 시각화에서 범위가 가장 긴 흉통 유형은 TA입니다. (PDF 답안: 4번 TA)'
     },
     {
       id: 'p309',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 9,
-      title: '결측치 포함 데이터 개수 파악',
-      description: '전체 데이터 중 결측치(Null/NaN)가 하나라도 포함된 행(Row)의 개수를 작성하세요.',
-      category: '데이터 전처리',
+      title: '심장병 없는 경우 콜레스테롤 이상치 개수 작성',
+      description: '심장병 레이블(HeartDisease)에 따른 혈청 콜레스테롤(Cholesterol)의 분포를 시각화하고, 심장병이 없는 경우의 이상치 개수를 작성하세요.',
+      category: '이상치 탐색',
       type: 'text',
-      answer: '12',
+      answer: '9',
       score: 6,
-      explanation: '결측치를 포함하는 전체 행의 개수는 12개입니다.'
+      explanation: 'HeartDisease=0(심장병 없음) 그룹의 Cholesterol 이상치 개수는 9개입니다. (PDF 답안: 9)'
     },
     {
       id: 'p310',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 10,
-      title: '결측치 평균값 대체 및 평균 계산',
-      description: '수치형 변수의 결측치를 해당 변수의 평균값으로 대체한 후, 평균 처리된 혈청 콜레스테롤(Cholesterol)의 평균값을 소수점 둘째 자리까지 작성하세요. (예: 00.00)',
+      title: '결측치 대체 후 ST_Slope 최빈값 비율 작성',
+      description: '종속변수를 제외한 모든 변수에 대해 결측치가 있는 경우, 수치형 변수는 중앙값, 범주형 변수는 최빈값으로 결측치를 대체하세요. 데이터 가공 후, 변화된 ST 구간의 기울기(ST_Slope)의 최빈값의 비율(%)을 작성하세요.\n■ 수치형 변수: Age, RestingBP, Cholesterol, FastingBS, MaxHR, Oldpeak\n■ 범주형 변수: Sex, ChestPainType, RestingECG, ExerciseAngina, ST_Slope\n■ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.\n■ 정답 작성 시 소수점은 반올림하여 소수점 아래 두자리까지 작성하세요. (예: 00.00)',
       category: '데이터 전처리',
       type: 'text',
-      answer: '50.11',
+      answer: '50.54',
       score: 6,
-      explanation: 'Cholesterol 결측치를 평균으로 대체 후 산출된 전체 평균 수치입니다.'
+      explanation: '결측치 대체 후 변화된 ST_Slope 최빈값 비율은 50.54%입니다. (PDF 답안: 50.54)'
     },
     {
       id: 'p311',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 11,
-      title: 'Min-Max 스케일링 후 값 작성',
-      description: '최대-최소 스케일링(Min-Max Scaling)을 적용한 후, 변환된 최대 심박수(MaxHR)의 최소값을 작성하세요.',
+      title: '스케일 조정 후 Cholesterol 표준편차 작성',
+      description: '다음의 컬럼들에 대해 주어진 Scale 조정 strategy를 적용하고, 변화된 혈청 콜레스테롤(Cholesterol)의 표준편차 값을 작성하세요.\n■ 문제 10번에서 가공된 컬럼은 가공 후 컬럼의 Scale을 조정하세요.\n■ 정규화 스케일링 대상 컬럼: Cholesterol, MaxHR\n■ 표준화 스케일링 대상 컬럼: Age, Oldpeak\n■ 수행 후 [가공데이터 저장]을 클릭하여 가공된 데이터를 저장하세요.\n■ 정답 작성 시 소수점은 반올림하여 소수점 아래 두자리까지 작성하세요. (예: 0.00)',
       category: '피처 스케일링',
       type: 'text',
       answer: '0.18',
       score: 8,
-      explanation: 'Min-Max 스케일링 적용 후 MaxHR 변수의 최소값 수치입니다.'
+      explanation: '스케일링 적용 후 Cholesterol 표준편차 값은 0.18입니다. (PDF 답안: 0.18)'
     },
     {
       id: 'p312',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 12,
-      title: '머신러닝 모델 비교 (정확도 Accuracy 기준)',
-      description: '다음 머신러닝 분류 알고리즘 중 기본 파라미터 상태에서 교차 검증 정확도(Accuracy)가 가장 높게 나타나는 모델을 고르세요.',
+      title: '머신러닝 모델 비교 (Accuracy 기준)',
+      description: '3개의 머신러닝 모델을 다음과 같은 설정으로 학습하고, 이중 Accuracy 기준 성능이 평균적으로 가장 좋은 것을 고르세요.\n■ 작업 데이터 선택: 문제 11번에서 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n■ Input 컬럼: 문제 10번 결측치 처리/11번 스케일 조정 사용 변수 중 \'변환하기 전의 변수\' 제외\n■ Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n■ 데이터 유형 선택: 종속 변수의 데이터 유형은 모델 유형에 맞게 설정하고, 나머지는 초기 설정값을 사용하세요.\n■ ML 모델 선택: KNN, Decision Tree, Random Forest\n■ 모델 Parameter 설정: 초기 설정값을 사용하세요.',
       category: '머신러닝 평가',
       type: 'single',
       options: ['KNN', 'Decision Tree', 'Random Forest'],
       answer: 'Random Forest',
       score: 8,
-      explanation: 'Random Forest 분류기가 교차 검증 정확도에서 가장 뛰어난 성능을 보입니다.'
+      explanation: 'Accuracy 기준 성능이 가장 뛰어난 모델은 Random Forest입니다. (PDF 답안: 3번 Random Forest)'
     },
     {
       id: 'p313',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 13,
-      title: '최고 성능 모델 AUC-ROC 수치 작성',
-      description: '문제 12번에서 선택한 최고 성능 머신러닝 모델의 AUC-ROC 점수를 반올림하여 소수점 네 자리까지 작성하세요. (예: 0.0000)',
-      category: '머신러닝 평가',
+      title: '딥러닝 모델 학습 및 Accuracy 작성',
+      description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 학습된 모델의 Accuracy를 작성하세요.\n■ 작업 데이터 선택: 문제 11번의 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n■ Output 컬럼: 종속 변수를 Output 컬럼으로 지정하세요.\n■ Input 컬럼: 문제 10번/11번 전처리 전 변수 제외, 모든 object형 변수의 인코더를 sparse로 설정하세요.\n■ 컬럼 파라미터 설정: 종속변수 데이터 유형 설정 / 활성함수: softmax, FC 레이어 수: 1, FC 레이어 크기: 100, 드롭아웃: 0, FC 활성함수: relu\n■ 학습 파라미터 설정: Epochs: 20, Batch Size: 128, learning rate: 0.001, 그 외 초기 설정값 사용\n■ 답안 작성: 모델 학습 후 오른쪽 상단의 [모델 저장]기능을 통해 모델을 저장하세요. 정답은 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.8817)',
+      category: '딥러닝 모델링',
       type: 'text',
-      answer: '0.8696',
+      answer: '0.8817',
       score: 8,
-      explanation: 'Random Forest 모델의 test 데이터셋 기준 AUC-ROC 수치입니다.'
+      explanation: '학습된 딥러닝 모델의 Accuracy는 0.8817입니다. (PDF 답안: 0.8817)'
     },
     {
       id: 'p314',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 14,
-      title: '특성 중요도(Feature Importance) 최상위 변수 선택',
-      description: '학습된 머신러닝 모델의 특성 중요도(Feature Importance)를 분석했을 때, 심장병 예측에 가장 중요한 영향을 미치지 않는(상위 3개 외) 변수를 고르세요.',
+      title: '딥러닝 모델 상위 5개 영향 미해당 변수 선택',
+      description: '문제 13번에서 저장한 딥러닝 모델 분석 결과, 심장병이 없는 경우에 대한 예측에 영향을 주는 상위 5개의 변수에 해당하지 않는 것을 고르세요.',
       category: '모델 해석',
       type: 'single',
       options: ['Oldpeak', 'MaxHR', 'RestingECG', 'ChestPainType'],
       answer: 'RestingECG',
       score: 8,
-      explanation: '상위 중요 변수(Oldpeak, MaxHR, ChestPainType)에 비해 RestingECG의 영향도가 상대적으로 낮습니다.'
+      explanation: '심장병 무 예측 상위 5개 변수에 미해당하는 컬럼은 RestingECG입니다. (PDF 답안: 3번 RestingECG)'
     },
     {
       id: 'p315',
       exam_id: 'c3333333-3333-3333-3333-333333333333',
       order_num: 15,
-      title: '신규 환자 데이터 기반 심장병 예측 추론',
-      description: '최종 선택된 모델을 사용하여 다음 조건을 가진 신규 환자의 심장병 유무 예측 결과를 고르세요.\n- Age: 55, Sex: M, ChestPainType: ASY, RestingBP: 140, Cholesterol: 240, FastingBS: 1, MaxHR: 130, ExerciseAngina: Y, Oldpeak: 1.5, ST_Slope: Flat',
+      title: '딥러닝 모델 기반 심장병 여부 예측 추론',
+      description: '문제 13번에서 저장한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 환자의 심장병 여부를 예측하세요.\n■ Age_SS: 0.4\n■ ChestPainType_IM: ASY\n■ Cholesterol_MS: 0.1\n■ ExerciseAngina: Y\n■ FastingBS: 1\n■ MaxHR_IM_MS: 0.3\n■ Oldpeak_IM_SS: 0.2\n■ RestingBP: 0\n■ RestingECG: ST\n■ Sex: F\n■ ST_Slope_IM: Flat',
       category: '모델 추론',
       type: 'single',
       options: ['0: 심장병 없음', '1: 심장병 있음'],
       answer: '1: 심장병 있음',
       score: 8,
-      explanation: '지정된 신규 환자 특성을 입력하여 예측된 결과는 1(심장병 있음)입니다.'
+      explanation: '지정된 환자 조건으로 예측된 결과는 1: 심장병 있음입니다. (PDF 답안: 2번 1: 심장병 있음)'
     }
   ],
   'd4444444-4444-4444-4444-444444444444': [
@@ -2132,4 +2132,42 @@ export async function fetchAllSubmissions(): Promise<Submission[]> {
   }
 
   return getLocalSubmissions().map(normalizeSubmission);
+}
+
+export function checkAnswerCorrect(userAnsRaw?: string, correctAnsRaw?: string, problem?: Problem): boolean {
+  if (userAnsRaw === undefined || userAnsRaw === null || correctAnsRaw === undefined || correctAnsRaw === null) return false;
+  const u = userAnsRaw.trim();
+  const c = correctAnsRaw.trim();
+  if (!u || !c) return false;
+
+  // 1. Direct equality
+  if (u === c) return true;
+  if (u.toLowerCase() === c.toLowerCase()) return true;
+
+  // 2. Numeric equivalence (e.g., "21.90" vs "21.9", "0.8817" vs ".8817")
+  const uNum = Number(u);
+  const cNum = Number(c);
+  if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum - cNum) < 0.0001) {
+    return true;
+  }
+
+  // 3. Single-choice option mapping & index comparison
+  if (problem && problem.options && problem.options.length > 0) {
+    const opts = problem.options;
+    // If correctAns is 1-based index (e.g. "2")
+    if (!isNaN(cNum) && cNum >= 1 && cNum <= opts.length) {
+      const targetOption = opts[cNum - 1];
+      if (u === targetOption || u.toLowerCase() === targetOption.toLowerCase()) return true;
+    }
+    // If userAns is 1-based index (e.g. "2")
+    if (!isNaN(uNum) && uNum >= 1 && uNum <= opts.length) {
+      const selectedOption = opts[uNum - 1];
+      if (c === selectedOption || c.toLowerCase() === selectedOption.toLowerCase()) return true;
+    }
+  }
+
+  // 4. Prefix/suffix match (e.g., "1: 심장병 있음" vs "1" or "2" vs "2번")
+  if (u.startsWith(c) || c.startsWith(u)) return true;
+
+  return false;
 }

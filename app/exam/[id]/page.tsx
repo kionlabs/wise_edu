@@ -6,7 +6,8 @@ import {
   getStoredSession, 
   fetchExamById, 
   fetchProblemsByExamId, 
-  saveSubmission 
+  saveSubmission,
+  checkAnswerCorrect 
 } from '@/lib/supabase';
 import { StudentSession, Exam, Problem } from '@/types/database';
 import { 
@@ -115,9 +116,7 @@ export default function ExamPage({ params }: ExamPageProps) {
 
     problems.forEach((p) => {
       maxTotalScore += p.score;
-      const userAns = (answers[p.id] || '').trim();
-      const correctAns = (p.answer || '').trim();
-      if (userAns === correctAns) {
+      if (checkAnswerCorrect(answers[p.id], p.answer, p)) {
         totalEarnedScore += p.score;
       }
     });
