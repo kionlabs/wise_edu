@@ -49,7 +49,8 @@ import {
   Save,
   ListChecks,
   PlusCircle,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -69,6 +70,7 @@ export default function AdminPage() {
   // Submissions Tab Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamFilter, setSelectedExamFilter] = useState<string>('ALL');
+  const [selectedSchoolFilter, setSelectedSchoolFilter] = useState<string>('ALL');
 
   // Form 1: Create Exam State
   const [newExamTitle, setNewExamTitle] = useState('');
@@ -550,6 +552,11 @@ export default function AdminPage() {
     reader.readAsText(file);
   };
 
+  // Extract Unique School/Organization List
+  const schoolOptions = Array.from(
+    new Set(submissions.map((s) => s.school).filter((sch) => sch && sch.trim().length > 0))
+  ).sort();
+
   // Submissions Filtering
   const filteredSubmissions = submissions.filter((sub) => {
     const matchesSearch =
@@ -558,7 +565,9 @@ export default function AdminPage() {
       sub.student_id.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesExam = selectedExamFilter === 'ALL' || sub.exam_id === selectedExamFilter;
-    return matchesSearch && matchesExam;
+    const matchesSchool = selectedSchoolFilter === 'ALL' || sub.school === selectedSchoolFilter;
+
+    return matchesSearch && matchesExam && matchesSchool;
   });
 
   // Export CSV
@@ -568,7 +577,8 @@ export default function AdminPage() {
       return;
     }
 
-    const headers = ['학교명', '학번', '학생이름', '모의고사 회차', '점수', '총점', '합격여부', '응시일시'];
+    // 소속(학교/기관) 컬럼을 맨 앞에 명확하게 포함
+    const headers = ['소속(학교/기관)', '학번', '학생이름', '모의고사 회차', '점수', '총점', '합격여부', '응시일시'];
     const rows = filteredSubmissions.map((s) => [
       `"${s.school}"`,
       `"${s.student_id}"`,
@@ -587,7 +597,8 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `AICE_Basic_남원용성고_성적리스트_${new Date().toISOString().slice(0, 10)}.csv`);
+    const schoolPrefix = selectedSchoolFilter !== 'ALL' ? `${selectedSchoolFilter}_` : '';
+    link.setAttribute('download', `AICE_Basic_성적리스트_${schoolPrefix}${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -740,40 +751,97 @@ export default function AdminPage() {
       {/* TAB 1: Submissions & Student Grades */}
       {activeTab === 'submissions' && (
         <div className="space-y-8">
+          {/* Global School/Organization Filter Bar */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <span>소속(학교/기관) 데이터 통합 필터</span>
+                  {selectedSchoolFilter !== 'ALL' && (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[11px] font-extrabold rounded-md">
+                      {selectedSchoolFilter} 적용 중
+                    </span>
+                  )}
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  선택한 학교/기관 소속에 따라 상단 요약 카드가 실시간 계산되고 성적 리스트가 정렬됩니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 border border-slate-200 rounded-xl w-full sm:w-auto">
+                <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
+                <span className="text-xs font-bold text-slate-600 shrink-0">소속 선택:</span>
+                <select
+                  value={selectedSchoolFilter}
+                  onChange={(e) => setSelectedSchoolFilter(e.target.value)}
+                  className="bg-transparent text-xs font-extrabold text-slate-900 focus:outline-none cursor-pointer w-full sm:w-auto"
+                >
+                  <option value="ALL">🏢 전체 소속 (전체 학교/기관)</option>
+                  {schoolOptions.map((sch) => (
+                    <option key={sch} value={sch}>
+                      {sch}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedSchoolFilter !== 'ALL' && (
+                <button
+                  onClick={() => setSelectedSchoolFilter('ALL')}
+                  className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition flex items-center gap-1 border border-rose-200 shrink-0"
+                >
+                  <span>전체 소속 보기</span>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Top Analytics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold block">총 제출 건수</span>
+                <span className="text-xs text-slate-500 font-semibold block">
+                  총 제출 건수 {selectedSchoolFilter !== 'ALL' && `(${selectedSchoolFilter})`}
+                </span>
                 <span className="text-2xl font-black text-slate-900">{totalSubCount}건</span>
               </div>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
                 <BarChart3 className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold block">전체 평균 점수</span>
+                <span className="text-xs text-slate-500 font-semibold block">
+                  평균 점수 {selectedSchoolFilter !== 'ALL' && `(${selectedSchoolFilter})`}
+                </span>
                 <span className="text-2xl font-black text-slate-900">{avgScore}점</span>
               </div>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold block">합격률</span>
+                <span className="text-xs text-slate-500 font-semibold block">
+                  합격률 {selectedSchoolFilter !== 'ALL' && `(${selectedSchoolFilter})`}
+                </span>
                 <span className="text-2xl font-black text-emerald-600">{passRate}%</span>
               </div>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                 <Award className="w-6 h-6" />
               </div>
               <div>
@@ -785,17 +853,30 @@ export default function AdminPage() {
 
           {/* Sub-section 1: 등록된 모의고사 현황 (Registered Exams Overview) */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-purple-600" />
-              <h2 className="text-lg font-bold text-slate-900">등록된 모의고사 회차별 응시 현황</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-bold text-slate-900">등록된 모의고사 회차별 응시 현황</h2>
+              </div>
+              {selectedSchoolFilter !== 'ALL' && (
+                <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5 text-purple-600" />
+                  {selectedSchoolFilter} 응시 데이터 모아보기 적용 중
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {exams.map((ex) => {
-                const exSubs = submissions.filter((s) => s.exam_id === ex.id);
+                const exSubsAll = submissions.filter((s) => s.exam_id === ex.id);
+                const exSubs = submissions.filter(
+                  (s) => s.exam_id === ex.id && (selectedSchoolFilter === 'ALL' || s.school === selectedSchoolFilter)
+                );
                 const exPassCount = exSubs.filter((s) => s.pass_status === 'PASS').length;
                 const exPassRate = exSubs.length > 0 ? Math.round((exPassCount / exSubs.length) * 100) : 0;
                 const exAvgScore = exSubs.length > 0 ? Math.round(exSubs.reduce((a, b) => a + b.score, 0) / exSubs.length) : 0;
+
+                const examSchools = Array.from(new Set(exSubsAll.map((s) => s.school))).filter(Boolean);
 
                 return (
                   <div key={ex.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3 hover:border-purple-200 transition">
@@ -835,6 +916,36 @@ export default function AdminPage() {
                         <span className="font-bold text-emerald-600">{exPassRate}%</span>
                       </div>
                     </div>
+
+                    {/* School/Organization Breakdown Buttons (if ALL selected) */}
+                    {selectedSchoolFilter === 'ALL' && examSchools.length > 0 && (
+                      <div className="p-2.5 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-slate-600 flex items-center gap-1">
+                            <Building2 className="w-3 h-3 text-purple-600" />
+                            소속(학교/기관)별 응시 현황
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-bold">{examSchools.length}개 소속</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {examSchools.map((sch) => {
+                            const schSubs = exSubsAll.filter((s) => s.school === sch);
+                            const schAvg = Math.round(schSubs.reduce((a, b) => a + b.score, 0) / schSubs.length);
+                            return (
+                              <button
+                                key={sch}
+                                type="button"
+                                onClick={() => setSelectedSchoolFilter(sch)}
+                                className="px-2 py-0.5 bg-white hover:bg-purple-100 hover:text-purple-800 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200 transition shadow-2xs"
+                                title={`${sch} 소속 성적 필터링`}
+                              >
+                                {sch}: <strong className="text-purple-700">{schSubs.length}명</strong> ({schAvg}점)
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Result Release Control Toggle Button */}
                     <button
@@ -885,30 +996,51 @@ export default function AdminPage() {
                 <Users className="w-5 h-5 text-blue-600" />
                 <h2 className="text-lg font-bold text-slate-900">학생 응시 성적 상세 리스트</h2>
               </div>
+              <span className="text-xs text-slate-500 font-semibold">
+                총 <strong className="text-blue-600">{filteredSubmissions.length}</strong>명 조회됨
+              </span>
             </div>
 
             {/* Filter Bar & CSV Export Button */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                <div className="relative w-full sm:w-72">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                <div className="relative w-full sm:w-64">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="학생 이름, 학교, 학번 검색..."
+                    placeholder="학생 이름, 소속, 학번 검색..."
                     className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* School/Organization Dropdown Filter */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
+                  <select
+                    value={selectedSchoolFilter}
+                    onChange={(e) => setSelectedSchoolFilter(e.target.value)}
+                    className="w-full sm:w-auto py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                  >
+                    <option value="ALL">🏢 전체 소속(학교/기관) 필터</option>
+                    {schoolOptions.map((sch) => (
+                      <option key={sch} value={sch}>
+                        {sch}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Exam Dropdown Filter */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
                   <Filter className="w-4 h-4 text-slate-400 shrink-0" />
                   <select
                     value={selectedExamFilter}
                     onChange={(e) => setSelectedExamFilter(e.target.value)}
-                    className="w-full sm:w-auto py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full sm:w-auto py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                   >
-                    <option value="ALL">전체 모의고사 회차 필터</option>
+                    <option value="ALL">📋 전체 모의고사 회차 필터</option>
                     {exams.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.title}
@@ -920,10 +1052,10 @@ export default function AdminPage() {
 
               <button
                 onClick={exportToCSV}
-                className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition"
+                className="w-full lg:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition shrink-0"
               >
                 <Download className="w-4 h-4" />
-                전체 성적 CSV 내보내기
+                <span>전체 성적 CSV 내보내기 (소속 포함)</span>
               </button>
             </div>
 
@@ -944,7 +1076,7 @@ export default function AdminPage() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
-                        <th className="py-4 px-5">학교명</th>
+                        <th className="py-4 px-5">소속 (학교/기관)</th>
                         <th className="py-4 px-5">학번</th>
                         <th className="py-4 px-5">학생 이름</th>
                         <th className="py-4 px-5">응시 모의고사</th>
