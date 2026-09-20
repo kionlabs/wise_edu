@@ -492,7 +492,14 @@ function getLocalExams(): Exam[] {
     const examMap = new Map<string, Exam>();
     MOCK_EXAMS.forEach(e => examMap.set(e.id, e));
     custom.forEach(e => {
-      if (e && e.id) examMap.set(e.id, e);
+      if (e && e.id) {
+        const mock = MOCK_EXAMS.find(m => m.id === e.id);
+        const merged: Exam = {
+          ...e,
+          overview: e.overview || mock?.overview
+        };
+        examMap.set(e.id, merged);
+      }
     });
 
     return Array.from(examMap.values());
@@ -572,7 +579,14 @@ export async function fetchExams(): Promise<Exam[]> {
         .order('created_at', { ascending: true });
       if (!error && data && data.length > 0) {
         const uniqueMap = new Map<string, Exam>();
-        data.forEach((item: any) => uniqueMap.set(item.id, item as Exam));
+        data.forEach((item: any) => {
+          const mock = MOCK_EXAMS.find(m => m.id === item.id);
+          const examObj: Exam = {
+            ...item,
+            overview: item.overview || mock?.overview
+          };
+          uniqueMap.set(item.id, examObj);
+        });
         return Array.from(uniqueMap.values());
       }
     } catch (e) {
@@ -628,7 +642,11 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
         .eq('id', examId)
         .single();
       if (!error && data) {
-        return data as Exam;
+        const mock = MOCK_EXAMS.find(m => m.id === data.id);
+        return {
+          ...data,
+          overview: data.overview || mock?.overview
+        } as Exam;
       }
     } catch (e) {
       console.warn('Supabase fetchExamById error, using fallback:', e);
