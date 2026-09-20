@@ -6,7 +6,8 @@ import {
   fetchExams, 
   createExam, 
   fetchProblemsByExamId, 
-  createProblem 
+  createProblem,
+  bulkCreateProblems
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -26,9 +27,11 @@ import {
   ArrowRight,
   LogOut,
   HelpCircle,
-  Sparkles,
   FilePlus,
-  Check
+  Check,
+  Upload,
+  Code2,
+  Rocket
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -38,7 +41,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('');
 
   // Admin Portal Navigation Tab
-  const [activeTab, setActiveTab] = useState<'submissions' | 'create_exam' | 'manage_problems'>('submissions');
+  const [activeTab, setActiveTab] = useState<'submissions' | 'create_exam' | 'manage_problems' | 'bulk_upload'>('submissions');
 
   // Shared Data States
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -77,6 +80,12 @@ export default function AdminPage() {
   const [isCreatingProblem, setIsCreatingProblem] = useState(false);
   const [probMsg, setProbMsg] = useState('');
 
+  // Form 3: Bulk Upload State
+  const [bulkTargetExamId, setBulkTargetExamId] = useState<string>('');
+  const [bulkJsonInput, setBulkJsonInput] = useState('');
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState('');
+
   // Check Admin Authentication from sessionStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -98,8 +107,9 @@ export default function AdminPage() {
       setSubmissions(subData);
       setExams(examData);
 
-      if (examData.length > 0 && !targetExamId) {
-        setTargetExamId(examData[0].id);
+      if (examData.length > 0) {
+        if (!targetExamId) setTargetExamId(examData[0].id);
+        if (!bulkTargetExamId) setBulkTargetExamId(examData[0].id);
       }
       setLoading(false);
     }
@@ -157,6 +167,7 @@ export default function AdminPage() {
 
     setExams((prev) => [...prev, created]);
     setTargetExamId(created.id);
+    setBulkTargetExamId(created.id);
     setIsCreatingExam(false);
     setExamMsg(`'${created.title}' 회차가 성공적으로 등록되었습니다!`);
     
@@ -208,6 +219,55 @@ export default function AdminPage() {
     setProbCsvUrl('');
     setProbExplanation('');
     setProbOrderNum((prev) => prev + 1);
+  };
+
+  // Submit Handler: Bulk Upload Problems
+  const handleBulkUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkTargetExamId) {
+      setBulkMsg('문제를 일괄 등록할 모의고사 회차를 선택해 주세요.');
+      return;
+    }
+    if (!bulkJsonInput.trim()) {
+      setBulkMsg('JSON 데이터 텍스트를 입력하거나 파일(.json)을 업로드해 주세요.');
+      return;
+    }
+
+    setIsBulkUploading(true);
+    setBulkMsg('');
+
+    try {
+      const parsed = JSON.parse(bulkJsonInput.trim());
+      const res = await bulkCreateProblems(bulkTargetExamId, parsed);
+      
+      if (res.error) {
+        setBulkMsg(`오류: ${res.error}`);
+      } else {
+        setBulkMsg(`🎉 총 ${res.count}개 문항이 선택한 모의고사 회차에 일괄 등록되었습니다!`);
+        setBulkJsonInput('');
+        
+        if (targetExamId === bulkTargetExamId) {
+          const probList = await fetchProblemsByExamId(bulkTargetExamId);
+          setProblems(probList);
+        }
+      }
+    } catch (err: any) {
+      setBulkMsg(`JSON 형식 오류: ${err.message || '올바른 JSON 배열 형식인지 확인해 주세요.'}`);
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setBulkJsonInput(content);
+    };
+    reader.readAsText(file);
   };
 
   // Submissions Filtering
@@ -373,6 +433,18 @@ export default function AdminPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('bulk_upload')}
+          className={`pb-3.5 px-4 font-extrabold text-sm border-b-2 transition flex items-center gap-2 shrink-0 ${
+            activeTab === 'bulk_upload'
+              ? 'border-purple-600 text-purple-700'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Rocket className="w-4 h-4 text-purple-600" />
+          문제 일괄 등록 (JSON 업로드)
+        </button>
+
+        <button
           onClick={() => setActiveTab('manage_problems')}
           className={`pb-3.5 px-4 font-extrabold text-sm border-b-2 transition flex items-center gap-2 shrink-0 ${
             activeTab === 'manage_problems'
@@ -381,7 +453,7 @@ export default function AdminPage() {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          회차별 문제 등록 및 관리
+          개별 문제 등록 및 관리
         </button>
       </div>
 
@@ -637,7 +709,101 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 3: Manage Problems Form */}
+      {/* TAB 3: Bulk Upload Problems Form (JSON/CSV) */}
+      {activeTab === 'bulk_upload' && (
+        <div className="max-w-3xl bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Rocket className="w-6 h-6 text-purple-600" />
+              문제 일괄 등록 (JSON / 파일 업로드)
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              AI가 변환해 준 JSON 배열 텍스트를 복사·붙여넣기하거나 .json 파일로 업로드하면 15개 문항이 선택한 회차에 싹 등록됩니다.
+            </p>
+          </div>
+
+          {bulkMsg && (
+            <div className={`p-4 rounded-2xl text-xs font-bold leading-relaxed ${
+              bulkMsg.includes('축하') || bulkMsg.includes('등록되었습니다') 
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' 
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
+            }`}>
+              {bulkMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleBulkUpload} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                1. 등록할 모의고사 회차 선택
+              </label>
+              <select
+                value={bulkTargetExamId}
+                onChange={(e) => setBulkTargetExamId(e.target.value)}
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {exams.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                  <Code2 className="w-4 h-4 text-purple-600" />
+                  2. JSON 데이터 텍스트 입력 또는 파일 업로드
+                </label>
+
+                <label className="cursor-pointer text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1 transition">
+                  <Upload className="w-3.5 h-3.5" />
+                  .json 파일 선택
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <textarea
+                value={bulkJsonInput}
+                onChange={(e) => setBulkJsonInput(e.target.value)}
+                placeholder='AI가 생성해 준 JSON 배열을 붙여넣으세요. 예:
+[
+  {
+    "order_num": 1,
+    "title": "알고리즘 유형 선택",
+    "content": "본 과제 해결에 알맞은...",
+    "category": "AI 개념",
+    "type": "single",
+    "options": ["회귀 모형", "분류 모형"],
+    "answer": "분류 모형",
+    "score": 20,
+    "explanation": "해설 문구..."
+  }, ...
+]'
+                rows={12}
+                className="w-full p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 leading-relaxed shadow-inner"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isBulkUploading}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/25 transition text-sm flex items-center justify-center gap-2"
+            >
+              <Rocket className="w-5 h-5" />
+              <span>{isBulkUploading ? '문항 일괄 등록 중...' : '선택한 모의고사 회차에 문항 일괄 등록하기'}</span>
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 4: Manage Problems Form */}
       {activeTab === 'manage_problems' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left 2 Cols: Add Problem Form */}
@@ -645,7 +811,7 @@ export default function AdminPage() {
             <div>
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-purple-600" />
-                신규 문제 등록
+                개별 문제 등록
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 특정 모의고사 회차에 포함될 문제, 보기, 정답, 해설, CSV 링크를 등록하세요.

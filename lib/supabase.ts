@@ -534,6 +534,60 @@ export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<P
   return newProblem;
 }
 
+export async function bulkCreateProblems(examId: string, rawList: any[]): Promise<{ count: number; error?: string }> {
+  if (!Array.isArray(rawList) || rawList.length === 0) {
+    return { count: 0, error: '올바른 JSON 배열 형식이 아닙니다. [...] 형태여야 합니다.' };
+  }
+
+  const formattedProblems = rawList.map((p, idx) => ({
+    exam_id: examId,
+    order_num: p.order_num || idx + 1,
+    title: p.title || `문제 ${idx + 1}`,
+    description: p.content || p.description || '',
+    category: p.category || '기초지식',
+    type: p.type === 'text' ? 'text' : 'single',
+    options: p.options ? (typeof p.options === 'string' ? p.options : JSON.stringify(p.options)) : null,
+    answer: String(p.answer || ''),
+    csv_url: p.csv_url || null,
+    score: Number(p.score || 20),
+    explanation: p.explanation || ''
+  }));
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .schema('aice')
+        .from('aice_problems')
+        .insert(formattedProblems)
+        .select();
+
+      if (!error && data) {
+        data.forEach(item => saveLocalProblem(examId, {
+          ...item,
+          options: typeof item.options === 'string' ? JSON.parse(item.options) : item.options
+        } as Problem));
+        return { count: data.length };
+      } else if (error) {
+        console.warn('Supabase bulkCreateProblems error:', error);
+      }
+    } catch (e) {
+      console.warn('Supabase bulkCreateProblems exception:', e);
+    }
+  }
+
+  // Local storage fallback
+  formattedProblems.forEach((p, idx) => {
+    const localItem: Problem = {
+      ...p,
+      id: `bulk_prob_${Date.now()}_${idx}`,
+      options: p.options ? JSON.parse(p.options) : undefined
+    } as Problem;
+    saveLocalProblem(examId, localItem);
+  });
+
+  return { count: formattedProblems.length };
+}
+
 export async function saveSubmission(submission: Omit<Submission, 'id' | 'submitted_at'>): Promise<Submission> {
   const newSubmission: Submission = {
     ...submission,
