@@ -1414,7 +1414,7 @@ export default function AdminPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     문제 번호
@@ -1436,18 +1436,6 @@ export default function AdminPage() {
                     value={probCategory}
                     onChange={(e) => setProbCategory(e.target.value)}
                     placeholder="예: 데이터 전처리, AI 윤리"
-                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    문항 배점
-                  </label>
-                  <input
-                    type="number"
-                    value={probScore}
-                    onChange={(e) => setProbScore(Number(e.target.value))}
                     className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
@@ -1597,7 +1585,6 @@ export default function AdminPage() {
                     <div key={p.id} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-purple-700">Q{p.order_num}. {p.category}</span>
-                        <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">{p.score}점</span>
                       </div>
                       <h4 className="font-bold text-slate-900 leading-snug">{p.title}</h4>
                       <p className="text-[11px] text-slate-500 line-clamp-2">{p.description}</p>
@@ -1679,7 +1666,7 @@ export default function AdminPage() {
                   <span className="text-xs font-bold text-purple-700">Q{newModalProbOrder} 번 문항으로 등록됩니다</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 순서</label>
                     <input
@@ -1709,15 +1696,6 @@ export default function AdminPage() {
                       <option value="single">객관식 (Single Choice)</option>
                       <option value="text">단답형 (Text Input)</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">배점</label>
-                    <input
-                      type="number"
-                      value={newModalProbScore}
-                      onChange={(e) => setNewModalProbScore(Number(e.target.value))}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold"
-                    />
                   </div>
                 </div>
 
@@ -1851,7 +1829,7 @@ export default function AdminPage() {
                             <span className="text-xs text-slate-400 font-bold">ID: {p.id}</span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-700 mb-1">문항 순서</label>
                               <input
@@ -1880,15 +1858,6 @@ export default function AdminPage() {
                                 <option value="single">객관식 (Single Choice)</option>
                                 <option value="text">단답형 (Text Input)</option>
                               </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 mb-1">배점</label>
-                              <input
-                                type="number"
-                                value={editProbScore}
-                                onChange={(e) => setEditProbScore(Number(e.target.value))}
-                                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
-                              />
                             </div>
                           </div>
 
@@ -2006,10 +1975,6 @@ export default function AdminPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-700 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-md">
-                              {p.score}점
-                            </span>
-
                             <button
                               type="button"
                               onClick={() => handleStartEditProb(p)}

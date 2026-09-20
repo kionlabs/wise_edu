@@ -213,9 +213,6 @@ export default function ExamPage({ params }: ExamPageProps) {
                     {currentProblem.category}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  배점: {currentProblem.score}점
-                </span>
               </div>
 
               {/* Title & Description */}
