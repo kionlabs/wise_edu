@@ -8,17 +8,22 @@ import {
   fetchProblemsByExamId, 
   saveSubmission 
 } from '@/lib/supabase';
-import { StudentSession, Exam, Problem, Submission } from '@/types/database';
+import { StudentSession, Exam, Problem } from '@/types/database';
 import { 
   Clock, 
   Download, 
   CheckCircle2, 
   AlertTriangle, 
-  ArrowLeft, 
-  ArrowRight, 
   Send,
   FileSpreadsheet,
-  HelpCircle
+  FileText,
+  Database,
+  Sparkles,
+  Layers,
+  ListChecks,
+  User,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 
 interface ExamPageProps {
@@ -33,7 +38,6 @@ export default function ExamPage({ params }: ExamPageProps) {
   const [session, setSession] = useState<StudentSession | null>(null);
   const [exam, setExam] = useState<Exam | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState<number>(60 * 60); // 60 minutes default
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,12 +96,19 @@ export default function ExamPage({ params }: ExamPageProps) {
     }));
   };
 
+  // Quick scroll to problem
+  const scrollToProblem = (orderNum: number) => {
+    const el = document.getElementById(`question-card-${orderNum}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // Submit Logic
   const executeSubmission = async () => {
     if (!session || !exam || isSubmitting) return;
     setIsSubmitting(true);
 
-    // Calculate score
     let totalEarnedScore = 0;
     let maxTotalScore = 0;
 
@@ -123,7 +134,6 @@ export default function ExamPage({ params }: ExamPageProps) {
       pass_status: passStatus
     });
 
-    // Save current submission payload to sessionStorage for instant result view
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('latest_submission', JSON.stringify({
         ...savedSub,
@@ -148,269 +158,352 @@ export default function ExamPage({ params }: ExamPageProps) {
 
   if (loading || !exam) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-semibold text-slate-600">시험 문제를 불러오는 중입니다...</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-bold text-slate-700">AICE Basic 시험 환경을 로딩 중입니다...</p>
         </div>
       </div>
     );
   }
 
-  const currentProblem = problems[currentIdx];
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = Object.keys(answers).filter(k => Boolean(answers[k])).length;
+  const datasetCsvUrl = problems.find(p => p.csv_url)?.csv_url || '/sample_data/customer_data.csv';
+
+  // Table Column mapping for clean rendering
+  const columnDefs = [
+    { name: 'Age', desc: '연령' },
+    { name: 'Attrition', desc: '퇴사 여부 (1: 퇴사, 0: 퇴사하지 않음)' },
+    { name: 'Department', desc: '근무 부서' },
+    { name: 'DistanceFromHome', desc: '집과의 거리' },
+    { name: 'Education', desc: '교육 수준' },
+    { name: 'Gender', desc: '성별' },
+    { name: 'JobInvolvement', desc: '직무 참여도' },
+    { name: 'JobRole', desc: '직무 역할' },
+    { name: 'JobSatisfaction', desc: '직무 만족도' },
+    { name: 'MonthlyRate', desc: '월급' },
+    { name: 'OverTime', desc: '야근 여부' },
+  ];
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Exam Header Bar with Timer */}
-      <div className="sticky top-16 z-40 bg-white rounded-2xl border border-slate-200 shadow-md p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded">
-              AICE Basic
-            </span>
-            <h1 className="text-lg font-bold text-slate-900">{exam.title}</h1>
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] max-w-[1700px] mx-auto pb-6">
+      {/* Top Fixed Header Bar */}
+      <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-md">
+            AICE
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            전체 {problems.length}문항 중 <span className="font-bold text-blue-600">{answeredCount}개</span> 답안 작성 완료
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[11px] font-extrabold rounded border border-purple-400/30">
+                AICE Basic 실전 시험
+              </span>
+              <span className="text-xs text-slate-400">
+                • {session?.school} {session?.student_id} {session?.student_name}
+              </span>
+            </div>
+            <h1 className="text-base sm:text-lg font-black tracking-tight text-white line-clamp-1">
+              {exam.title}
+            </h1>
+          </div>
         </div>
 
-        {/* 60분 Timer Display */}
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+        {/* Live Timer & Primary CSV Download Button */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+          <a
+            href={datasetCsvUrl}
+            download
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition animate-pulse"
+          >
+            <Download className="w-4 h-4" />
+            <span>실습용 CSV 데이터셋 다운로드</span>
+          </a>
+
           <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black tracking-wider shadow-inner ${
             timeLeft < 300 
-              ? 'bg-rose-50 text-rose-600 border border-rose-200 animate-pulse' 
-              : 'bg-slate-900 text-emerald-400'
+              ? 'bg-rose-500 text-white border border-rose-300 animate-bounce' 
+              : 'bg-slate-800 text-emerald-400 border border-slate-700'
           }`}>
             <Clock className="w-5 h-5 text-current" />
             <span>{formatTime(timeLeft)}</span>
           </div>
-
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition"
-          >
-            <Send className="w-4 h-4" />
-            시험 제출하기
-          </button>
         </div>
       </div>
 
-      {/* Main Grid: Problem View + Question Navigation Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left 3 Cols: Current Problem Display */}
-        <div className="lg:col-span-3 space-y-6">
-          {currentProblem && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              {/* Problem Metadata Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center">
-                    Q{currentProblem.order_num}
-                  </span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg">
-                    {currentProblem.category}
-                  </span>
-                </div>
-              </div>
-
-              {/* Title & Description */}
-              <div className="space-y-3">
-                <h2 className="text-xl font-extrabold text-slate-900 leading-snug">
-                  {currentProblem.title}
+      {/* Main Split Screen Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+        
+        {/* ============================================================== */}
+        {/* LEFT PANEL: Exam Guide & Dataset Info (Approx. 70% Width)     */}
+        {/* ============================================================== */}
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col space-y-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-1">
+          
+          {/* Section 1: Exam Background & Task Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-600" />
+                <h2 className="text-base font-extrabold text-slate-900">
+                  시험 문제 개요 & 과제 수행 가이드 (PDF Page 1)
                 </h2>
-                <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  {currentProblem.description}
-                </div>
+              </div>
+              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
+                과제: 퇴사여부 예측
+              </span>
+            </div>
+
+            {/* Structured Info Boxes */}
+            <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 주제</span>
+                <p className="font-bold text-slate-900 text-sm">퇴사여부 예측</p>
               </div>
 
-              {/* Practical CSV Download Component */}
-              {currentProblem.csv_url && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold">
-                      <FileSpreadsheet className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-extrabold text-emerald-900 block">
-                        실습용 데이터셋 CSV 파일 첨부
-                      </span>
-                      <span className="text-[11px] text-emerald-700">
-                        파일을 다운로드받아 파이썬 또는 엑셀로 분석 후 정답을 제출하세요.
-                      </span>
-                    </div>
-                  </div>
-
-                  <a
-                    href={currentProblem.csv_url}
-                    download
-                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow flex items-center gap-1.5 transition shrink-0"
-                  >
-                    <Download className="w-4 h-4" />
-                    CSV 데이터 다운로드
-                  </a>
-                </div>
-              )}
-
-              {/* Answer Input Controls */}
-              <div className="pt-2">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-                  답안 선택 및 입력
-                </h3>
-
-                {currentProblem.type === 'single' && currentProblem.options && (
-                  <div className="space-y-2.5">
-                    {currentProblem.options.map((option, idx) => {
-                      const isSelected = answers[currentProblem.id] === option;
-                      return (
-                        <label
-                          key={idx}
-                          onClick={() => handleSelectAnswer(currentProblem.id, option)}
-                          className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${
-                            isSelected
-                              ? 'bg-blue-50 border-blue-500 text-blue-900 font-semibold shadow-sm'
-                              : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
-                          }`}>
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                          </div>
-                          <span className="text-sm">{option}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {currentProblem.type === 'text' && (
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={answers[currentProblem.id] || ''}
-                      onChange={(e) => handleSelectAnswer(currentProblem.id, e.target.value)}
-                      placeholder="정답 수치 또는 텍스트를 입력하세요 (예: 85)"
-                      className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-                    />
-                    <p className="text-[11px] text-slate-500">
-                      * 단답형 문항입니다. 특수문자 없이 정확한 정답 값을 입력해 주세요.
-                    </p>
-                  </div>
-                )}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 배경</span>
+                <p className="text-slate-800 leading-relaxed whitespace-pre-line">
+                  최근에는 조직 문화, 업무 강도, 보상 수준 등 다양한 요인으로 인해 직원의 퇴사 가능성을 미리 파악하는 것이 중요해지고 있습니다. 직원의 퇴사는 개인의 만족도뿐만 아니라 근속 기간, 업무 환경, 직무 역할, 성과 등 여러 요인이 복합적으로 작용해 발생하기 때문에 단순한 기준만으로 판단하기 어렵습니다. 만약 과거 직원 데이터를 기반으로 퇴사 가능성을 미리 예측할 수 있다면, 퇴사 위험이 높은 직원을 조기에 파악하고 인사 관리와 조직 운영을 보다 효과적으로 진행할 수 있을 것입니다.
+                  {"\n\n"}
+                  이를 위해 데이터 분석과 머신러닝 모델을 활용하여 직원의 다양한 근무 지표를 종합적으로 고려해 퇴사 여부를 예측하고자 합니다.
+                </p>
               </div>
 
-              {/* Prev / Next Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <button
-                  disabled={currentIdx === 0}
-                  onClick={() => setCurrentIdx((prev) => prev - 1)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  이전 문제
-                </button>
-
-                <span className="text-xs font-bold text-slate-400">
-                  {currentIdx + 1} / {problems.length}
-                </span>
-
-                <button
-                  disabled={currentIdx === problems.length - 1}
-                  onClick={() => setCurrentIdx((prev) => prev + 1)}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition"
-                >
-                  다음 문제
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              <div className="p-4 bg-purple-50/80 rounded-xl border border-purple-200 space-y-1">
+                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 과제명</span>
+                <p className="font-bold text-purple-950 text-sm">
+                  인사 데이터를 기반으로 직원의 퇴사여부를 예측하는 AI 모델을 구현해보세요.
+                </p>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Section 2: Data Columns 명세 Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Database className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-extrabold text-slate-900">
+                ■ 데이터 컬럼명 명세 (Data Column Definitions)
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-900 text-white font-extrabold uppercase text-[11px]">
+                    <th className="py-3 px-4 w-1/3">컬럼명 (Column)</th>
+                    <th className="py-3 px-4">설명 및 범주 (Description)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {columnDefs.map((col, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 transition">
+                      <td className="py-2.5 px-4 font-mono font-bold text-purple-950 bg-purple-50/50">
+                        {col.name}
+                      </td>
+                      <td className="py-2.5 px-4 font-semibold text-slate-800">
+                        {col.desc}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                위 데이터 컬럼 명세를 참고하여 파이썬 AIDU 또는 Jupyter Notebook에서 실습용 CSV 데이터를 탐색하고 모델을 구축하세요.
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Right 1 Col: Question Navigation Grid */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-blue-600" />
-              문항 답안 현황
-            </h3>
+        {/* ============================================================== */}
+        {/* RIGHT PANEL: Vertical Scrollable 15 Questions List (30% Width) */}
+        {/* ============================================================== */}
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col space-y-4 max-h-[calc(100vh-10rem)]">
+          
+          {/* Quick Question Jump Pill Bar & Progress Header */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ListChecks className="w-5 h-5 text-purple-600" />
+                <h3 className="text-sm font-extrabold text-slate-900">문제 풀이 & 답안 작성</h3>
+              </div>
+              <span className="text-xs font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+                {answeredCount} / {problems.length} 문항 완료
+              </span>
+            </div>
 
-            <div className="grid grid-cols-5 gap-2">
-              {problems.map((p, idx) => {
+            {/* Quick Jumper Grid (1 ~ 15) */}
+            <div className="grid grid-cols-5 gap-1.5 pt-1">
+              {problems.map((p) => {
                 const isAnswered = Boolean(answers[p.id]);
-                const isCurrent = currentIdx === idx;
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setCurrentIdx(idx)}
-                    className={`h-11 rounded-xl font-bold text-xs flex flex-col items-center justify-center transition border ${
-                      isCurrent
-                        ? 'border-blue-600 ring-2 ring-blue-500/20 bg-blue-600 text-white'
-                        : isAnswered
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    onClick={() => scrollToProblem(p.order_num)}
+                    className={`py-1.5 rounded-lg font-mono font-extrabold text-xs transition border flex items-center justify-center gap-1 ${
+                      isAnswered
+                        ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs'
+                        : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-purple-100 hover:text-purple-900'
                     }`}
                   >
                     <span>Q{p.order_num}</span>
-                    {isAnswered && !isCurrent && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    )}
+                    {isAnswered && <Check className="w-3 h-3 text-white" />}
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            <div className="pt-3 border-t border-slate-100 space-y-1 text-[11px] text-slate-500 font-medium">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-blue-600"></span>
-                <span>현재 풀고 있는 문항</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span>
-                <span>답안 작성 완료 문항</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-slate-100 border border-slate-200"></span>
-                <span>미작성 문항</span>
-              </div>
-            </div>
+          {/* Scrollable Questions Continuous List (Q1 to Q15) */}
+          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+            {problems.map((p) => {
+              const isAnswered = Boolean(answers[p.id]);
+
+              return (
+                <div
+                  key={p.id}
+                  id={`question-card-${p.order_num}`}
+                  className={`bg-white rounded-2xl border p-5 shadow-xs transition space-y-4 ${
+                    isAnswered ? 'border-emerald-300 ring-1 ring-emerald-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  {/* Problem Badge Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center ${
+                        isAnswered ? 'bg-emerald-600 text-white' : 'bg-purple-600 text-white'
+                      }`}>
+                        Q{p.order_num}
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-md">
+                        {p.category}
+                      </span>
+                      <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                        {p.type === 'single' ? '객관식' : '단답형'}
+                      </span>
+                    </div>
+
+                    {isAnswered && (
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold text-[11px] rounded flex items-center gap-1">
+                        <Check className="w-3 h-3" /> 작성 완료
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Problem Title & Text */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-extrabold text-slate-900 leading-snug">
+                      {p.title}
+                    </h4>
+                    {p.description && (
+                      <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
+                        {p.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Answer Input Controls */}
+                  <div className="pt-1">
+                    {p.type === 'single' && p.options && (
+                      <div className="space-y-2">
+                        {p.options.map((option, idx) => {
+                          const isSelected = answers[p.id] === option;
+                          return (
+                            <label
+                              key={idx}
+                              onClick={() => handleSelectAnswer(p.id, option)}
+                              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer text-xs transition ${
+                                isSelected
+                                  ? 'bg-purple-50 border-purple-500 text-purple-950 font-bold shadow-xs'
+                                  : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected ? 'border-purple-600 bg-purple-600 text-white' : 'border-slate-300'
+                              }`}>
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                              </div>
+                              <span className="leading-tight">{option}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {p.type === 'text' && (
+                      <div className="space-y-1.5">
+                        <input
+                          type="text"
+                          value={answers[p.id] || ''}
+                          onChange={(e) => handleSelectAnswer(p.id, e.target.value)}
+                          placeholder="정답 수치 또는 텍스트 입력 (예: 14235)"
+                          className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition text-purple-950"
+                        />
+                        <p className="text-[10px] text-slate-400">
+                          * 문제 지문에서 요구하는 정수/소수점 형식을 정확히 작성해 주세요.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom Fixed Action Bar for Submit */}
+          <div className="p-4 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 shrink-0">
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 transition"
+            >
+              <Send className="w-4 h-4" />
+              <span>최종 시험 제출하기 ({answeredCount}/{problems.length} 완료)</span>
+            </button>
           </div>
         </div>
+
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Final Submission Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-3 text-amber-600">
-              <AlertTriangle className="w-8 h-8" />
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-7 h-7 text-amber-600" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">모의고사를 제출하시겠습니까?</h3>
-                <p className="text-xs text-slate-500">제출 후에는 답안 수정이 불가능합니다.</p>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  시험을 최종 제출하시겠습니까?
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  제출 완료 후 즉시 자동 채점 및 결과 리포트가 생성됩니다.
+                </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl text-xs space-y-2 border border-slate-200">
+            <div className="bg-slate-50 p-4 rounded-2xl text-xs space-y-2 border border-slate-200/90 font-medium">
               <div className="flex justify-between">
-                <span className="text-slate-500">총 문항 수:</span>
-                <span className="font-bold text-slate-900">{problems.length}개</span>
+                <span className="text-slate-500">총 문제 수:</span>
+                <span className="font-bold text-slate-900">{problems.length}문항</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">답안 작성 문항:</span>
-                <span className="font-bold text-emerald-600">{answeredCount}개</span>
+                <span className="text-slate-500">답안 작성 완료:</span>
+                <span className="font-extrabold text-emerald-600">{answeredCount}문항</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">미작성 문항:</span>
-                <span className="font-bold text-rose-600">{problems.length - answeredCount}개</span>
+                <span className="font-extrabold text-rose-600">{problems.length - answeredCount}문항</span>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 transition"
+                className="px-4 py-2.5 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 transition"
               >
                 취소하고 더 풀기
               </button>
@@ -420,9 +513,9 @@ export default function ExamPage({ params }: ExamPageProps) {
                   executeSubmission();
                 }}
                 disabled={isSubmitting}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition"
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-500/25 flex items-center gap-1.5 transition"
               >
-                {isSubmitting ? '제출 및 채점 중...' : '최종 제출하기'}
+                {isSubmitting ? '채점 및 저장 중...' : '확인 (최종 제출)'}
               </button>
             </div>
           </div>
