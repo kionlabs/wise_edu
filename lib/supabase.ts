@@ -1360,7 +1360,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '문자형 변수의 개수를 작성하세요.',
       category: '데이터 이해',
       type: 'text',
-      answer: '12',
+      answer: '13',
       score: 20,
       explanation: '범주형/문자형(Object/String) 데이터 유형을 가진 변수의 총 개수입니다.'
     },
@@ -1385,7 +1385,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '다음 중 결측치가 가장 많은 변수의 결측치 비율을 작성하세요. (예: 0.00)',
       category: '데이터 탐색',
       type: 'text',
-      answer: '0.05',
+      answer: '1.36',
       score: 20,
       explanation: '가장 많은 결측치를 보유한 컬럼의 결측치 비율 수치입니다.'
     },
@@ -1398,9 +1398,9 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '상관관계 분석',
       type: 'single',
       options: ['Hours_Studied, Exam_Score', 'Exam_Score, Tutoring_Sessions', 'Exam_Score, Attendance', 'Previous_Scores, Exam_Score'],
-      answer: 'Previous_Scores, Exam_Score',
+      answer: 'Exam_Score, Attendance',
       score: 20,
-      explanation: '상관계수 절댓값이 가장 높은 수치형 변수 조합은 Previous_Scores와 Exam_Score입니다.'
+      explanation: '상관계수 절댓값이 가장 높은 수치형 변수 조합은 Exam_Score와 Attendance입니다.'
     },
     {
       id: 'p606',
@@ -1410,7 +1410,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '주당 공부 시간(Hours_Studied)이 38시간 이상인 여학생의 수를 작성하세요.',
       category: '데이터 탐색',
       type: 'text',
-      answer: '142',
+      answer: '8',
       score: 20,
       explanation: 'Hours_Studied >= 38 및 Gender == Female 조건의 데이터 수입니다.'
     },
@@ -1436,9 +1436,9 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 시각화',
       type: 'single',
       options: ['Yes, Public', 'Yes, Private', 'No, Public', 'No, Private'],
-      answer: 'No, Private',
+      answer: 'No, Public',
       score: 20,
-      explanation: 'Hours_Studied 시각화 박스플롯 결과 이상치가 없는 범주 조합은 No, Private입니다.'
+      explanation: 'Hours_Studied 시각화 박스플롯 결과 이상치가 없는 범주 조합은 No, Public입니다.'
     },
     {
       id: 'p609',
@@ -1448,7 +1448,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '종속변수를 제외한 모든 변수에 대해 결측치가 있는 경우, 최빈값으로 결측치를 대체하세요. 데이터 가공 후, 변화된 Parental_Education_Level의 최빈값의 비율을 작성하세요. (예: 00.00)\n- 결측치 대체 후에는 결측치 처리 전의 컬럼은 삭제합니다.\n※ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.',
       category: '데이터 전처리',
       type: 'text',
-      answer: '0.48',
+      answer: '50.14',
       score: 20,
       explanation: 'Parental_Education_Level 최빈값 대체 후 최빈값의 비율 수치입니다.'
     },
@@ -1485,7 +1485,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 학습된 모델의 MAE를 작성하세요.\n- 작업 데이터 선택: 문제 10번 신규 저장 데이터\n- Output 컬럼: 종속 변수 (Exam_Score)\n- Input 컬럼: 모든 Object형 변수의 인코더를 sparse로 설정\n- 컬럼 파라미터 설정: 활성함수 linear, FC 레이어 수 1, FC 레이어 크기 256, 드롭아웃 0, FC 활성함수 relu\n- 학습 파라미터 설정: Epochs 30, Batch Size 128, learning rate 0.001\n- 답안 작성: 소수점 네번째 자리까지 반올림 작성 (예: 0.0000)',
       category: '딥러닝 모델링',
       type: 'text',
-      answer: '1.8521',
+      answer: '0.2121',
       score: 20,
       explanation: '딥러닝 모델 학습 후 산출된 MAE 검증 수치입니다.'
     },
@@ -1510,7 +1510,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '문제 12번에서 학습한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 학생 최종 점수를 예측하여 정수 형태로 작성하세요.\n- Access_to_Resources_OE: 0, Attendance: 80, Distance_from_Home_IM: Moderate\n- Extracurricular_Activities_No: 0, Extracurricular_Activities_Yes: 1, Family_Income_OE: 1\n- Gender: Female, Hours_Studied: 18, Internet_Access_No: 0, Internet_Access_Yes: 1\n- Learning_Disabilities_No: 1, Learning_Disabilities_Yes: 0, Motivation_Level_OE: 1\n- Parental_Education_Level_IM: High School, Parental_Involvement_OE: 0\n- Peer_Influence: Positive, Physical_Activity: 1, Previous_Scores: 78\n- School_Type: Public, Sleep_Hours: 7, Teacher_Quality_IM_OE: 0, Tutoring_Sessions: 0',
       category: '모델 추론',
       type: 'text',
-      answer: '72',
+      answer: '66',
       score: 20,
       explanation: '지정된 학생 조건 입력 시 예측되는 최종 시험 점수 정수 수치입니다.'
     },
@@ -1522,7 +1522,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       description: '문제 12번에서 학습한 딥러닝 모델을 고도화할 예정입니다. "모델의 가중치를 업데이트하기 위해 손실함수를 최소화하는 방식"을 sgd로 설정하고 "한 번의 가중치 업데이트 시 얼마나 이동할지를 결정하는 값"은 0.1로 설정하세요. 또한 모델 성능이 10번 연속으로 개선되지 않을 때 학습을 조기 종료하도록 설정하여 모델을 학습하세요. 개선된 MAE를 작성하세요.\n- 문제에 제시된 요구사항 외 나머지 설정은 12번 문항과 동일한 설정으로 학습합니다.\n- 문제에서 제시된 파라미터만 변경하여 모델을 고도화하세요.\n- 답안은 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)',
       category: '모델 고도화',
       type: 'text',
-      answer: '1.6210',
+      answer: '0.2020',
       score: 20,
       explanation: 'Optimizer=sgd, Learning Rate=0.1, Early Stopping Patience=10 고도화 후 산출된 MAE 수치입니다.'
     }
