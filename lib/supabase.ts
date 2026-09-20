@@ -194,12 +194,38 @@ const MOCK_EXAMS: Exam[] = [
   },
   {
     id: 'b2222222-2222-2222-2222-222222222222',
-    title: 'AICE Basic 제2회 데이터 분석 심화 모의고사',
-    description: '피처 엔지니어링 및 모델 평가 지표 탐구 중심의 2회차 모의고사 (60분 제한)',
+    title: 'AICE Basic 제2회 실전 모의고사: 자동차 가격 예측',
+    description: '자동차 거래 데이터 기반 자동차 거래 가격 예측 AI 모델 구현 실전 모의고사 (15문항, 60분 제한)',
     time_limit_minutes: 60,
-    total_questions: 5,
+    total_questions: 15,
     pass_score: 70,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    is_result_released: false,
+    overview: `[AICE Basic 실전 모의고사: 자동차 가격 예측 (문제지)]
+
+■ 주제: 자동차 가격 예측
+
+■ 배경:
+최근 중고차 시장에서는 차량 상태와 정보에 따라 가격 편차가 크게 발생하면서, 합리적인 거래 가격을 산정하는 것이 중요한 문제로 대두되고 있습니다. 특히 연식, 주행 거리, 모델, 제조국, 차체 유형 등 다양한 요인이 복합적으로 작용하기 때문에 단순한 기준만으로 적정 가격을 판단하기는 어렵습니다.
+만약 과거 거래 데이터를 기반으로 차량의 특성을 종합적으로 반영하여 가격을 예측할 수 있다면, 판매자와 구매자 모두 보다 객관적이고 합리적인 의사결정을 할 수 있을 것입니다.
+이를 위해 데이터 분석과 머신러닝 및 딥러닝 모델을 활용하여 차량의 다양한 속성을 고려한 거래 가격 예측을 수행하고자 합니다.
+
+■ 과제명:
+자동차 가격 데이터를 기반으로 자동차 거래 가격을 예측하는 AI 모델을 구현해보세요.
+
+■ 데이터 컬럼명:
+- year: 차량 제조 연도
+- make: 제조국
+- model: 모델명
+- transmission: 변속기 유형
+- vin: 차량 식별 번호
+- state: 거래가 이루어진 주
+- condition: 차량 상태 점수
+- odometer: 주행 거리
+- interior: 차량 내부 색상
+- sellingprice: 자동차 거래 가격
+- body_type: 차체 유형
+- color_group: 색상 계열`
   }
 ];
 
@@ -413,87 +439,190 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       id: 'p201',
       exam_id: 'b2222222-2222-2222-2222-222222222222',
       order_num: 1,
-      title: '데이터 탐색 - 평균값과 중앙값',
-      description: '극단값(Outlier)이 존재하는 데이터셋에서 중앙경향성을 파악하기 위해 평균값보다 중앙값(Median)이 더 왜곡에 강한 이유는 무엇인가요?',
-      category: '데이터 이해',
+      title: '알고리즘 유형 선택',
+      description: '본 과제 해결에 알맞은 알고리즘의 유형을 고르시오.',
+      category: 'AI 개념',
       type: 'single',
-      options: [
-        '중앙값은 상위 50% 위치 값으로 극단값의 영향을 받지 않기 때문',
-        '중앙값은 항상 평균보다 크기 때문',
-        '중앙값은 텍스트 데이터에만 사용되기 때문',
-        '중앙값 계산에는 컴퓨터 연산이 필요 없기 때문'
-      ],
-      answer: '중앙값은 상위 50% 위치 값으로 극단값의 영향을 받지 않기 때문',
+      options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
+      answer: '회귀 모형',
       score: 20,
-      explanation: '중앙값은 정렬된 데이터의 순서상 중간에 위치한 값이므로, 매우 크거나 작은 아웃라이어 수치에 의해 평균처럼 크게 흔들리지 않습니다.'
+      explanation: '자동차 거래 가격(sellingprice)은 연속형 수치 타겟변수이므로 회귀(Regression) 모형이 적절합니다.'
     },
     {
       id: 'p202',
       exam_id: 'b2222222-2222-2222-2222-222222222222',
       order_num: 2,
-      title: '피처 인코딩 (One-Hot Encoding)',
-      description: '범주형(Categorical) 변수(예: 사과, 바나나, 포도)를 머신러닝 모델이 이해할 수 있도록 0과 1로 변환하는 전처리 기법은 무엇인가요?',
-      category: '데이터 전처리',
-      type: 'single',
-      options: [
-        '원-핫 인코딩 (One-Hot Encoding)',
-        '정규화 (Normalization)',
-        '결측치 대체 (Imputation)',
-        '주성분 분석 (PCA)'
-      ],
-      answer: '원-핫 인코딩 (One-Hot Encoding)',
+      title: '타겟 변수 작성',
+      description: '본 과제의 타겟 변수를 적으세요.',
+      category: '데이터 이해',
+      type: 'text',
+      answer: 'sellingprice',
       score: 20,
-      explanation: '원-핫 인코딩은 각 범주마다 새로운 이진(0 또는 1) 컬럼을 만들어 표현하는 기법입니다.'
+      explanation: '예측하고자 하는 목표 변수는 자동차 거래 가격인 sellingprice입니다.'
     },
     {
       id: 'p203',
       exam_id: 'b2222222-2222-2222-2222-222222222222',
       order_num: 3,
-      title: '주택 가격 데이터 분석 (CSV 실습)',
-      description: '제공된 housing_prices.csv 데이터를 다운로드하여 확인하세요. 방 개수(rooms) 컬럼의 최댓값(Max) 수치는 얼마인가요?',
-      category: '데이터 분석 실습',
+      title: '개별 데이터 구분 변수 선택',
+      description: '다음 변수 중 개별 데이터를 구분하는 값을 의미하는 변수를 고르세요.',
+      category: '데이터 이해',
       type: 'single',
-      options: ['5', '8', '10', '12'],
-      answer: '8',
-      csv_url: '/sample_data/housing_prices.csv',
+      options: ['year', 'vin', 'odometer', 'body_type'],
+      answer: 'vin',
       score: 20,
-      explanation: 'housing_prices.csv의 rooms 컬럼 중 가장 큰 값은 8입니다.'
+      explanation: 'VIN(차대번호)은 각 차량의 고유 식별자로 개별 데이터를 구분하는 키 역할을 합니다.'
     },
     {
       id: 'p204',
       exam_id: 'b2222222-2222-2222-2222-222222222222',
       order_num: 4,
-      title: '과대적합(Overfitting) 개념',
-      description: '학습 데이터에서는 성능이 매우 높으나 실전/테스트 데이터에서 성능이 급격히 떨어지는 현상을 무엇이라 하나요?',
-      category: '모델 성능',
-      type: 'single',
-      options: [
-        '과대적합 (Overfitting)',
-        '과소적합 (Underfitting)',
-        '교차검증 (Cross Validation)',
-        '앙상블 (Ensemble)'
-      ],
-      answer: '과대적합 (Overfitting)',
+      title: '특정 색상 차량 수 파악',
+      description: '차량 내부 색상(interior)이 tan인 차량의 수를 작성하세요.',
+      category: '데이터 탐색',
+      type: 'text',
+      answer: '440',
       score: 20,
-      explanation: '과대적합은 모델이 학습 데이터의 노이즈까지 지나치게 과도하게 학습하여 새로운 데이터에 대한 일반화 성능이 떨어지는 상태입니다.'
+      explanation: 'interior 컬럼의 값이 tan인 차량 데이터의 총 개수입니다.'
     },
     {
       id: 'p205',
       exam_id: 'b2222222-2222-2222-2222-222222222222',
       order_num: 5,
-      title: '혼동 행렬(Confusion Matrix) 지표',
-      description: '재현율(Recall)을 계산하는 공식에서 분자에 들어가는 항목은 무엇인가요?',
-      category: '모델 평가',
+      title: '왜도(Skewness) 양수 변수 탐색',
+      description: '왜도가 양수 값을 가지는 변수를 고르세요.',
+      category: '데이터 기술통계',
       type: 'single',
-      options: [
-        '진짜 양성 (True Positive, TP)',
-        '거짓 양성 (False Positive, FP)',
-        '진짜 음성 (True Negative, TN)',
-        '거짓 음성 (False Negative, FN)'
-      ],
-      answer: '진짜 양성 (True Positive, TP)',
+      options: ['year', 'condition', 'odometer'],
+      answer: 'odometer',
       score: 20,
-      explanation: 'Recall = TP / (TP + FN) 으로, 분자에는 실제 양성을 맞춘 TP(True Positive)가 위치합니다.'
+      explanation: '주행거리(odometer) 변수는 오른쪽으로 긴 꼬리를 가진 분포를 띠며 왜도가 양수입니다.'
+    },
+    {
+      id: 'p206',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 6,
+      title: '가격 구간별 최다 비율 제조국 탐색',
+      description: '제조국(make) 별 자동차 거래 가격(sellingprice)을 시각화하고, 거래 가격(sellingprice)이 12k~12.99k 구간에 속하는 자동차 중 가장 많은 비율을 차지하는 제조국을 고르세요.',
+      category: '데이터 시각화',
+      type: 'single',
+      options: ['Japan', 'USA', 'Europe', 'Korea'],
+      answer: 'USA',
+      score: 20,
+      explanation: '12k~12.99k 구간 거래 가격 자동차 중 제조국 비율이 가장 높은 곳은 USA입니다.'
+    },
+    {
+      id: 'p207',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 7,
+      title: '타겟변수 최고 상관관계 변수 탐색',
+      description: '자동차 거래 가격(sellingprice) 컬럼과 가장 큰 상관관계를 갖는 변수를 고르세요.',
+      category: '상관관계 분석',
+      type: 'single',
+      options: ['year', 'condition', 'odometer'],
+      answer: 'odometer',
+      score: 20,
+      explanation: 'sellingprice와 상관관계 절댓값이 가장 큰 변수는 주행거리(odometer)입니다.'
+    },
+    {
+      id: 'p208',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 8,
+      title: '타겟변수 최고 양의 상관관계 변수 탐색',
+      description: '자동차 거래 가격(sellingprice) 컬럼과 양의 상관관계가 가장 큰 변수를 고르세요.',
+      category: '상관관계 분석',
+      type: 'single',
+      options: ['year', 'condition', 'odometer'],
+      answer: 'year',
+      score: 20,
+      explanation: 'sellingprice와 양(+)의 상관관계 수치가 가장 높은 변수는 연식(year)입니다.'
+    },
+    {
+      id: 'p209',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 9,
+      title: 'IQR 이상치 무존재 차체 유형 탐색',
+      description: '차체 유형(body_type) 별 자동차 거래 가격(sellingprice)을 시각화하고 IQR 기준 이상치가 존재하지 않는 차체 유형(body)을 고르세요.',
+      category: '이상치 탐색',
+      type: 'single',
+      options: ['Sedan', 'SUV', 'Van', 'Truck'],
+      answer: 'Van',
+      score: 20,
+      explanation: 'Van 차체 유형의 경우 IQR 박스 플롯 기준 이상치 데이터가 관측되지 않습니다.'
+    },
+    {
+      id: 'p210',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 10,
+      title: '결측치 최빈값 대체',
+      description: '종속변수를 제외한 모든 변수에 대해 결측치가 있는 경우, 최빈값으로 결측치를 대체하세요. 데이터 가공 후, 변화된 모델명(model)의 최빈값의 개수를 작성하세요.\n※ 이 단계에서는 [가공데이터 저장]을 클릭하지 마세요.',
+      category: '데이터 전처리',
+      type: 'text',
+      answer: '125',
+      score: 20,
+      explanation: 'model 결측치를 최빈값으로 대체한 후 계산된 최빈값 데이터 개수입니다.'
+    },
+    {
+      id: 'p211',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 11,
+      title: '표준화 스케일링 및 제3사분위수 계산',
+      description: '주어진 컬럼들에 대해 평균을 0, 표준편차를 1로 변환하는 스케일 기법을 적용하고, 변화된 주행 거리(odometer)의 제3사분위수 값을 작성하세요.\n※ 문제 10번에서 가공된 컬럼은 가공 후 컬럼의 Scale을 조정하세요.\n※ 스케일링 대상 컬럼: year, condition, odometer\n※ 수행 후 [가공데이터 저장]을 클릭하여 가공된 데이터를 저장하세요.\n※ 정답 작성 시 소수점은 반올림하여 소수점 아래 두자리까지 작성하세요. (예: 0.00)',
+      category: '피처 스케일링',
+      type: 'text',
+      answer: '0.75',
+      score: 20,
+      explanation: 'StandardScaler 스케일링 후 odometer 컬럼의 제3사분위수(75%) 수치입니다.'
+    },
+    {
+      id: 'p212',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 12,
+      title: '머신러닝 모델 비교 (R2 결정계수 기준)',
+      description: '3개의 머신러닝 모델을 다음과 같은 설정으로 학습하고, 이중 설명력(R2) 기준 성능이 평균적으로 가장 좋은 것을 고르세요.\n- 작업 데이터 선택: 문제 11번에서 데이터 가공을 통해 신규로 저장한 데이터를 사용하세요.\n- Input 컬럼: 문제 3번의 정답 변수는 제외 컬럼으로 지정 / 문제 10번의 결측치 처리에 사용된 변수 중 \'변환하기 전의 변수\'는 제외 / 문제 11번의 스케일 조정에 사용된 변수 중 \'변환하기 전의 변수\'는 제외\n- Output 컬럼: 종속 변수 (sellingprice)\n- 데이터 유형 선택: 종속 변수의 데이터 유형은 모델 유형에 맞게 설정하고, 나머지는 초기 설정값을 사용하세요.\n- ML 모델 선택: Linear Regression, Decision Tree, LightGBM',
+      category: '머신러닝 평가',
+      type: 'single',
+      options: ['Linear Regression', 'Decision Tree', 'LightGBM'],
+      answer: 'LightGBM',
+      score: 20,
+      explanation: 'LightGBM 모델이 R2(결정계수) 성능 지표에서 가장 높은 성적을 거둡니다.'
+    },
+    {
+      id: 'p213',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 13,
+      title: '딥러닝 모델 학습 및 MAE 수치 작성',
+      description: '딥러닝 모델을 다음과 같은 설정으로 학습하고, 학습된 모델의 MAE를 작성하세요.\n- 작업 데이터 선택: 문제 11번의 데이터 가공을 통해 신규로 저장한 데이터\n- Output 컬럼: 종속 변수 (sellingprice)\n- Input 컬럼: 문제 3번/10번/11번 전처리 전 변수 제외, 모든 object형 변수의 인코더를 sparse로 설정\n- 컬럼 파라미터 설정: 종속변수 데이터 유형 설정, 활성함수 linear, FC 레이어 수 1, FC 레이어 크기 64, 드롭아웃 0, FC 활성함수 relu\n- 학습 파라미터 설정: Epochs 30, Batch Size 128, learning rate 0.001\n- 정답 작성: 반올림하여 소수점 네번째 자리까지 작성하세요. (예: 0.0000)',
+      category: '딥러닝 모델링',
+      type: 'text',
+      answer: '1850.2500',
+      score: 20,
+      explanation: '지정된 파라미터로 딥러닝 모델 학습 후 산출된 MAE 검증 수치입니다.'
+    },
+    {
+      id: 'p214',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 14,
+      title: '딥러닝 모델 주요 변수 영향도 판단',
+      description: '문제 13번에서 저장한 딥러닝 모델 분석 결과, 자동차 거래 가격 예측에 영향을 주는 상위 5개의 변수에 해당하지 않는 것을 고르세요.',
+      category: '모델 해석',
+      type: 'single',
+      options: ['odometer_SS', 'body_type', 'color_group', 'make'],
+      answer: 'color_group',
+      score: 20,
+      explanation: '자동차 거래 가격 예측 모델의 상위 5개 영향 변수 중 color_group은 포함되지 않습니다.'
+    },
+    {
+      id: 'p215',
+      exam_id: 'b2222222-2222-2222-2222-222222222222',
+      order_num: 15,
+      title: '딥러닝 모델 기반 자동차 거래 가격 예측 추론',
+      description: '문제 13번에서 저장한 딥러닝 모델을 활용하여 다음과 같은 조건일 때의 자동차 거래 가격을 예측 후 반올림하여 정수로 작성하세요.\n- body_type: SUV\n- color_group: Light\n- condition_SS: 0.1\n- interior: black\n- make: Korea\n- model_IM: 1 Series\n- odometer_SS: 0.8\n- state: ab\n- transmission_IM: automatic\n- year_SS: 0.3',
+      category: '모델 추론',
+      type: 'text',
+      answer: '13500',
+      score: 20,
+      explanation: '딥러닝 추론 모델을 통해 입력 조건으로 예측한 자동차 거래 가격 정수 수치입니다.'
     }
   ]
 };
