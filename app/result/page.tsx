@@ -161,7 +161,7 @@ function ResultContent() {
             <div className="w-px h-12 bg-white/20"></div>
             <div>
               <span className="text-xs opacity-80 block mb-1">합격 커트라인</span>
-              <span className="text-4xl sm:text-5xl font-black tracking-tight">70</span>
+              <span className="text-4xl sm:text-5xl font-black tracking-tight">{exam?.pass_score || 80}</span>
               <span className="text-sm font-normal opacity-80"> 점</span>
             </div>
           </div>

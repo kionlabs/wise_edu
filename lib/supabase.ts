@@ -4,6 +4,11 @@ import { Exam, Problem, Submission, StudentSession, Student } from '@/types/data
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+export function getScoreByOrderNum(orderNum: number): number {
+  if (orderNum >= 1 && orderNum <= 10) return 6;
+  return 8;
+}
+
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 
@@ -167,7 +172,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '인공지능 개념, 데이터 전처리, 머신러닝/딥러닝 모델링 및 퇴사여부 예측 CSV 데이터셋 실습 포함 (60분 제한)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     overview: `[AICE Basic 모의고사: 퇴사여부 예측 (문제지)]
 
@@ -199,7 +204,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '자동차 거래 데이터 기반 자동차 거래 가격 예측 AI 모델 구현 실전 모의고사 (15문항, 60분 제한)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
     overview: `[AICE Basic 실전 모의고사: 자동차 가격 예측 (문제지)]
@@ -234,7 +239,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '심장병 환자 데이터를 기반으로 환자의 심장병 여부를 예측하는 AI 모델 구현 연습문제 (15문항)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
     overview: `[AICE Basic 연습문제: 심장병 예측 (문제지)]
@@ -268,7 +273,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '와인의 여러 화학적 특성을 담은 데이터를 통해 와인의 품질을 예측하는 AI 모델 구현 연습문제 (15문항)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
     overview: `[AICE Basic 연습문제 2: 와인 품질 예측 (문제지)]
@@ -303,7 +308,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '은행 내 고객 이탈에 영향을 미치는 요인을 탐색 및 분석하고 고객의 이탈 여부를 예측하는 AI 모델 구현 연습문제 (15문항)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
     overview: `[AICE Basic 연습문제 3: 은행 고객 이탈 예측 (문제지)]
@@ -339,7 +344,7 @@ const MOCK_EXAMS: Exam[] = [
     description: '다양한 학습 요인을 통해 학생의 최종 시험 점수를 예측하는 AI 모델 구현 연습문제 (15문항)',
     time_limit_minutes: 60,
     total_questions: 15,
-    pass_score: 70,
+    pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
     overview: `[AICE Basic 연습문제 4: 학생 성적 예측 (문제지)]
@@ -390,7 +395,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '분류 모형',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: '직원의 퇴사 여부(1: 퇴사, 0: 퇴사하지 않음)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
     },
     {
@@ -403,7 +408,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '2',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'customer_data.csv 데이터셋에서 JobSatisfaction 및 MonthlyRate 컬럼에 결측치가 포함되어 있어 총 2개입니다.'
     },
     {
@@ -417,7 +422,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['Department', 'OverTime', 'JobRole', 'JobSatisfaction'],
       answer: 'JobSatisfaction',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'Department, OverTime, JobRole은 범주형(문자형) 변수이고, JobSatisfaction은 수치형 변수입니다.'
     },
     {
@@ -430,7 +435,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '14235',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'MonthlyRate 컬럼의 2분위수(중앙값, Median/50%) 수치입니다.'
     },
     {
@@ -443,7 +448,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '127',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'Attrition이 1인 직원의 OverTime 분포를 교차 분석하면 야근을 수행한 퇴사 직원 수는 127명입니다.'
     },
     {
@@ -457,7 +462,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['Age', 'DistanceFromHome', 'Education', 'JobInvolvement'],
       answer: 'JobInvolvement',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'Attrition 변수와 직무 참여도(JobInvolvement) 변수가 가장 강한 음의 상관관계를 보입니다.'
     },
     {
@@ -470,7 +475,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '58',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: '퇴사 그룹 연령 분포의 Q3 + 1.5 * IQR 상한선 수치는 58세입니다.'
     },
     {
@@ -484,7 +489,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['퇴사함', '퇴사하지 않음'],
       answer: '퇴사함',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: '퇴사한 그룹(Attrition=1)의 DistanceFromHome IQR 박스 범위가 더 큽니다.'
     },
     {
@@ -497,7 +502,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '468',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: '기존 4인 개수에 결측치 수만큼 대체되어 총 468개가 됩니다.'
     },
     {
@@ -510,7 +515,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '1413',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 6,
       explanation: 'MonthlyRate 결측치 행을 dropna로 제거한 후 최종 남은 행 수는 1413개입니다.'
     },
     {
@@ -524,7 +529,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['0', '1'],
       answer: '1',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 8,
       explanation: 'Gender 컬럼 Ordinal Encoding 결과 Male은 1 (Female은 0)로 매핑됩니다.'
     },
     {
@@ -538,7 +543,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['Logistic Regression', 'Decision Tree', 'Random Forest'],
       answer: 'Random Forest',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 8,
       explanation: 'Random Forest 모델이 교차 검증 재현율(Recall) 지표에서 가장 높은 성능을 보입니다.'
     },
     {
@@ -551,7 +556,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '0.8524',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 8,
       explanation: '설정된 파라미터로 딥러닝 모델을 10 에포크 학습시킨 후 검증 정확도는 0.8524입니다.'
     },
     {
@@ -565,7 +570,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       options: ['0: 퇴사하지 않음', '1: 퇴사함'],
       answer: '1: 퇴사함',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 8,
       explanation: '주어진 조건(야근 1, 높은 직무참여도 문제 등)으로 추론 시 예측 결과는 1(퇴사함)입니다.'
     },
     {
@@ -578,7 +583,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'text',
       answer: '0.8850',
       csv_url: '/sample_data/customer_data.csv',
-      score: 20,
+      score: 8,
       explanation: 'Epochs=100, Batch Size=256으로 고도화 후 검증 정확도는 0.8850으로 상향됩니다.'
     }
   ],
@@ -593,7 +598,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '회귀 모형',
-      score: 20,
+      score: 6,
       explanation: '자동차 거래 가격(sellingprice)은 연속형 수치 타겟변수이므로 회귀(Regression) 모형이 적절합니다.'
     },
     {
@@ -605,7 +610,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 이해',
       type: 'text',
       answer: 'sellingprice',
-      score: 20,
+      score: 6,
       explanation: '예측하고자 하는 목표 변수는 자동차 거래 가격인 sellingprice입니다.'
     },
     {
@@ -618,7 +623,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['year', 'vin', 'odometer', 'body_type'],
       answer: 'vin',
-      score: 20,
+      score: 6,
       explanation: 'VIN(차대번호)은 각 차량의 고유 식별자로 개별 데이터를 구분하는 키 역할을 합니다.'
     },
     {
@@ -630,7 +635,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '440',
-      score: 20,
+      score: 6,
       explanation: 'interior 컬럼의 값이 tan인 차량 데이터의 총 개수입니다.'
     },
     {
@@ -643,7 +648,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['year', 'condition', 'odometer'],
       answer: 'odometer',
-      score: 20,
+      score: 6,
       explanation: '주행거리(odometer) 변수는 오른쪽으로 긴 꼬리를 가진 분포를 띠며 왜도가 양수입니다.'
     },
     {
@@ -656,7 +661,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Japan', 'USA', 'Europe', 'Korea'],
       answer: 'USA',
-      score: 20,
+      score: 6,
       explanation: '12k~12.99k 구간 거래 가격 자동차 중 제조국 비율이 가장 높은 곳은 USA입니다.'
     },
     {
@@ -669,7 +674,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['year', 'condition', 'odometer'],
       answer: 'odometer',
-      score: 20,
+      score: 6,
       explanation: 'sellingprice와 상관관계 절댓값이 가장 큰 변수는 주행거리(odometer)입니다.'
     },
     {
@@ -682,7 +687,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['year', 'condition', 'odometer'],
       answer: 'year',
-      score: 20,
+      score: 6,
       explanation: 'sellingprice와 양(+)의 상관관계 수치가 가장 높은 변수는 연식(year)입니다.'
     },
     {
@@ -695,7 +700,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Sedan', 'SUV', 'Van', 'Truck'],
       answer: 'Van',
-      score: 20,
+      score: 6,
       explanation: 'Van 차체 유형의 경우 IQR 박스 플롯 기준 이상치 데이터가 관측되지 않습니다.'
     },
     {
@@ -707,7 +712,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '125',
-      score: 20,
+      score: 6,
       explanation: 'model 결측치를 최빈값으로 대체한 후 계산된 최빈값 데이터 개수입니다.'
     },
     {
@@ -719,7 +724,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '피처 스케일링',
       type: 'text',
       answer: '0.75',
-      score: 20,
+      score: 8,
       explanation: 'StandardScaler 스케일링 후 odometer 컬럼의 제3사분위수(75%) 수치입니다.'
     },
     {
@@ -732,7 +737,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Linear Regression', 'Decision Tree', 'LightGBM'],
       answer: 'LightGBM',
-      score: 20,
+      score: 8,
       explanation: 'LightGBM 모델이 R2(결정계수) 성능 지표에서 가장 높은 성적을 거둡니다.'
     },
     {
@@ -744,7 +749,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '딥러닝 모델링',
       type: 'text',
       answer: '1850.2500',
-      score: 20,
+      score: 8,
       explanation: '지정된 파라미터로 딥러닝 모델 학습 후 산출된 MAE 검증 수치입니다.'
     },
     {
@@ -757,7 +762,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['odometer_SS', 'body_type', 'color_group', 'make'],
       answer: 'color_group',
-      score: 20,
+      score: 8,
       explanation: '자동차 거래 가격 예측 모델의 상위 5개 영향 변수 중 color_group은 포함되지 않습니다.'
     },
     {
@@ -769,7 +774,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 추론',
       type: 'text',
       answer: '13500',
-      score: 20,
+      score: 8,
       explanation: '딥러닝 추론 모델을 통해 입력 조건으로 예측한 자동차 거래 가격 정수 수치입니다.'
     }
   ],
@@ -784,7 +789,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '분류 모형',
-      score: 20,
+      score: 6,
       explanation: '심장병 여부(1: 심장병 유, 0: 심장병 무)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
     },
     {
@@ -796,7 +801,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 이해',
       type: 'text',
       answer: 'HeartDisease',
-      score: 20,
+      score: 6,
       explanation: '예측하고자 하는 목표 변수는 심장병 여부인 HeartDisease입니다.'
     },
     {
@@ -808,7 +813,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '6',
-      score: 20,
+      score: 6,
       explanation: 'Age, RestingBP, Cholesterol, FastingBS, MaxHR, Oldpeak 총 6개 수치형 변수입니다.'
     },
     {
@@ -821,7 +826,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['최소값', '중위수', '표준편차', '제1분위수'],
       answer: '최소값',
-      score: 20,
+      score: 6,
       explanation: '데이터 정렬 시 가장 작은 위치의 값은 최소값(Min)입니다.'
     },
     {
@@ -833,7 +838,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 기술통계',
       type: 'text',
       answer: '22.11',
-      score: 20,
+      score: 6,
       explanation: 'RestingBP 컬럼 데이터의 표준편차 계산 결과입니다.'
     },
     {
@@ -845,7 +850,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '18',
-      score: 20,
+      score: 6,
       explanation: 'RestingBP >= 170 조건을 만족하는 데이터의 총 개수는 18개입니다.'
     },
     {
@@ -858,7 +863,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Age', 'MaxHR', 'Oldpeak', 'RestingBP'],
       answer: 'RestingBP',
-      score: 20,
+      score: 6,
       explanation: '제시된 변수들 중 분포의 비대칭도(왜도)가 가장 높은 변수는 RestingBP입니다.'
     },
     {
@@ -871,7 +876,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['ATA', 'NAP', 'ASY', 'TA'],
       answer: 'TA',
-      score: 20,
+      score: 6,
       explanation: 'ChestPainType 변수의 카테고리 중 빈도수가 가장 적은 유형은 TA(Typical Angina)입니다.'
     },
     {
@@ -883,7 +888,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '12',
-      score: 20,
+      score: 6,
       explanation: '결측치를 포함하는 전체 행의 개수는 12개입니다.'
     },
     {
@@ -895,7 +900,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '50.11',
-      score: 20,
+      score: 6,
       explanation: 'Cholesterol 결측치를 평균으로 대체 후 산출된 전체 평균 수치입니다.'
     },
     {
@@ -907,7 +912,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '피처 스케일링',
       type: 'text',
       answer: '0.18',
-      score: 20,
+      score: 8,
       explanation: 'Min-Max 스케일링 적용 후 MaxHR 변수의 최소값 수치입니다.'
     },
     {
@@ -920,7 +925,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['KNN', 'Decision Tree', 'Random Forest'],
       answer: 'Random Forest',
-      score: 20,
+      score: 8,
       explanation: 'Random Forest 분류기가 교차 검증 정확도에서 가장 뛰어난 성능을 보입니다.'
     },
     {
@@ -932,7 +937,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '머신러닝 평가',
       type: 'text',
       answer: '0.8696',
-      score: 20,
+      score: 8,
       explanation: 'Random Forest 모델의 test 데이터셋 기준 AUC-ROC 수치입니다.'
     },
     {
@@ -945,7 +950,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Oldpeak', 'MaxHR', 'RestingECG', 'ChestPainType'],
       answer: 'RestingECG',
-      score: 20,
+      score: 8,
       explanation: '상위 중요 변수(Oldpeak, MaxHR, ChestPainType)에 비해 RestingECG의 영향도가 상대적으로 낮습니다.'
     },
     {
@@ -958,7 +963,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['0: 심장병 없음', '1: 심장병 있음'],
       answer: '1: 심장병 있음',
-      score: 20,
+      score: 8,
       explanation: '지정된 신규 환자 특성을 입력하여 예측된 결과는 1(심장병 있음)입니다.'
     }
   ],
@@ -972,7 +977,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 이해',
       type: 'text',
       answer: 'quality',
-      score: 20,
+      score: 6,
       explanation: '예측하고자 하는 목표 변수는 와인의 품질인 quality입니다.'
     },
     {
@@ -984,7 +989,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '15.65',
-      score: 20,
+      score: 6,
       explanation: '데이터셋 내 중복 행(Duplicate rows)이 차지하는 비율 계산 결과입니다.'
     },
     {
@@ -997,7 +1002,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['fixed acidity', 'volatile acidity', 'free sulfur dioxide', 'alcohol'],
       answer: 'alcohol',
-      score: 20,
+      score: 6,
       explanation: '제시된 컬럼 중 결측치가 가장 적은 컬럼은 alcohol입니다.'
     },
     {
@@ -1010,7 +1015,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['free sulfur dioxide', 'total sulfur dioxide', 'pH', 'alcohol'],
       answer: 'total sulfur dioxide',
-      score: 20,
+      score: 6,
       explanation: '제시된 변수들 중 제3분위수(75%) 수치가 가장 큰 변수는 total sulfur dioxide입니다.'
     },
     {
@@ -1023,7 +1028,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['pH, fixed acidity', 'density, fixed acidity', 'citric acid, fixed acidity', 'free sulfur dioxide, total sulfur dioxide'],
       answer: 'free sulfur dioxide, total sulfur dioxide',
-      score: 20,
+      score: 6,
       explanation: '상관계수 절댓값이 가장 큰 수치형 변수 조합은 free sulfur dioxide와 total sulfur dioxide입니다.'
     },
     {
@@ -1035,7 +1040,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 시각화',
       type: 'text',
       answer: '8',
-      score: 20,
+      score: 6,
       explanation: 'quality별 citric acid 시각화 결과 상단경계가 가장 높은 quality 등급은 8입니다.'
     },
     {
@@ -1047,7 +1052,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 시각화',
       type: 'text',
       answer: '5',
-      score: 20,
+      score: 6,
       explanation: 'quality 빈도 분포 시각화 시 가장 많은 데이터를 가진 품질 등급은 5입니다.'
     },
     {
@@ -1060,7 +1065,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['9 ~ 9.19', '9.2 ~ 9.39', '9.4 ~ 9.59', '9.6 ~ 9.79'],
       answer: '9.4 ~ 9.59',
-      score: 20,
+      score: 6,
       explanation: 'quality가 6인 데이터 중 alcohol 분포가 가장 많은 구간은 9.4 ~ 9.59입니다.'
     },
     {
@@ -1072,7 +1077,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '1590',
-      score: 20,
+      score: 6,
       explanation: '결측치 행 삭제 후 남아있는 전체 데이터 행 개수입니다.'
     },
     {
@@ -1084,7 +1089,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '피처 스케일링',
       type: 'text',
       answer: '0.37',
-      score: 20,
+      score: 6,
       explanation: 'pH 컬럼 정규화 적용 후 제1사분위수 수치입니다.'
     },
     {
@@ -1097,7 +1102,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Linear Regression', 'Decision Tree', 'Random Forest'],
       answer: 'Random Forest',
-      score: 20,
+      score: 8,
       explanation: 'Random Forest 모델이 평균 MAE 평가 지표에서 가장 우수한 성능을 나타냅니다.'
     },
     {
@@ -1109,7 +1114,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '딥러닝 모델링',
       type: 'text',
       answer: '0.4215',
-      score: 20,
+      score: 8,
       explanation: '설정 파라미터로 학습 후 산출된 딥러닝 모델의 MSE 평가 수치입니다.'
     },
     {
@@ -1122,7 +1127,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['citric acid', 'alcohol', 'density', 'residual sugar_SS'],
       answer: 'alcohol',
-      score: 20,
+      score: 8,
       explanation: '딥러닝 모델 영향도 분석 결과 상위 5개 변수에 포함되는 컬럼은 alcohol입니다.'
     },
     {
@@ -1134,7 +1139,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 추론',
       type: 'text',
       answer: '6',
-      score: 20,
+      score: 8,
       explanation: '입력 조건으로 예측된 와인 품질 정수 수치입니다.'
     },
     {
@@ -1146,7 +1151,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 고도화',
       type: 'text',
       answer: '0.3852',
-      score: 20,
+      score: 8,
       explanation: 'Epochs 50, Batch Size 32로 고도화하여 학습한 딥러닝 모델의 개선된 MSE 수치입니다.'
     }
   ],
@@ -1161,7 +1166,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '분류 모형',
-      score: 20,
+      score: 6,
       explanation: '고객 이탈 여부(1: 이탈, 0: 미이탈)는 범주형 타겟변수를 예측하는 문제이므로 분류(Classification) 모형이 적절합니다.'
     },
     {
@@ -1173,7 +1178,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 이해',
       type: 'text',
       answer: 'Exited',
-      score: 20,
+      score: 6,
       explanation: '예측하고자 하는 목표 변수는 고객 이탈 여부인 Exited입니다.'
     },
     {
@@ -1186,7 +1191,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['CustomerId', 'CreditScore', 'Tenure', 'EstimatedSalary'],
       answer: 'CustomerId',
-      score: 20,
+      score: 6,
       explanation: 'CustomerId는 고유 식별값으로 모델 예측 학습에서 제외해야 합니다.'
     },
     {
@@ -1198,7 +1203,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 기술통계',
       type: 'text',
       answer: '45.90',
-      score: 20,
+      score: 6,
       explanation: 'NumOfProducts가 2인 고객의 비율(%) 계산 결과입니다.'
     },
     {
@@ -1210,7 +1215,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '12',
-      score: 20,
+      score: 6,
       explanation: 'CreditScore 705~709 구간의 이탈 고객과 유지 고객 수의 차이입니다.'
     },
     {
@@ -1223,7 +1228,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Age', 'Balance', 'NumOfProducts', 'IsActiveMember'],
       answer: 'Age',
-      score: 20,
+      score: 6,
       explanation: '타겟 변수 Exited와 양(+)의 상관관계가 가장 높은 변수는 Age입니다.'
     },
     {
@@ -1236,7 +1241,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['France', 'Spain', 'Germany'],
       answer: 'Germany',
-      score: 20,
+      score: 6,
       explanation: '이탈 고객 계좌 잔액 중앙값이 가장 높은 지역은 Germany입니다.'
     },
     {
@@ -1248,7 +1253,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 시각화',
       type: 'text',
       answer: '4',
-      score: 20,
+      score: 6,
       explanation: 'NumOfProducts별 Age 박스플롯 분석 시 IQR 박스 길이가 가장 긴 상품 수는 4개입니다.'
     },
     {
@@ -1260,7 +1265,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '5151',
-      score: 20,
+      score: 6,
       explanation: 'IsActiveMember 최빈값 대체 후 산출된 최빈값의 개수입니다.'
     },
     {
@@ -1272,7 +1277,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '이상치 처리',
       type: 'text',
       answer: '9641',
-      score: 20,
+      score: 6,
       explanation: 'Age 이상치 제거 후 남은 최종 데이터 행의 개수입니다.'
     },
     {
@@ -1285,7 +1290,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['KNN', 'Decision Tree', 'Random Forest'],
       answer: 'Random Forest',
-      score: 20,
+      score: 8,
       explanation: 'Random Forest 모델이 평균 재현율(Recall) 성능에서 가장 뛰어납니다.'
     },
     {
@@ -1297,7 +1302,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '딥러닝 모델링',
       type: 'text',
       answer: '18',
-      score: 20,
+      score: 8,
       explanation: '딥러닝 학습 과정에서 가장 좋은 성능을 기록한 에포크 회차입니다.'
     },
     {
@@ -1310,7 +1315,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['EstimatedSalary_IM', 'CreditScore', 'Tenure_IM', 'NumOfProducts'],
       answer: 'NumOfProducts',
-      score: 20,
+      score: 8,
       explanation: '이탈 예측 딥러닝 모델의 상위 5개 변수 영향도 분석 결과 포함되는 컬럼은 NumOfProducts입니다.'
     },
     {
@@ -1323,7 +1328,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['1: 이탈함', '0: 이탈하지 않음'],
       answer: '0: 이탈하지 않음',
-      score: 20,
+      score: 8,
       explanation: '제시된 고객 특성 입력 시 예측된 결과는 0(이탈하지 않음)입니다.'
     },
     {
@@ -1335,7 +1340,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 고도화',
       type: 'text',
       answer: '0.8540',
-      score: 20,
+      score: 8,
       explanation: '파라미터 고도화 후 최종 산출된 딥러닝 모델의 Accuracy 수치입니다.'
     }
   ],
@@ -1350,7 +1355,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['회귀 모형', '분류 모형', '군집 모형', '시계열 모형'],
       answer: '회귀 모형',
-      score: 20,
+      score: 6,
       explanation: '최종 시험 점수(Exam_Score)는 연속형 수치 데이터를 예측하는 문제이므로 회귀(Regression) 모형이 적절합니다.'
     },
     {
@@ -1362,7 +1367,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 이해',
       type: 'text',
       answer: '13',
-      score: 20,
+      score: 6,
       explanation: '범주형/문자형(Object/String) 데이터 유형을 가진 변수의 총 개수입니다.'
     },
     {
@@ -1375,7 +1380,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['왜도', '데이터의 총합', '제2사분위수', '제4사분위수'],
       answer: '데이터의 총합',
-      score: 20,
+      score: 6,
       explanation: 'Exam_Score 기술통계량 중 최빈값 개수 수치보다 큰 값을 가지는 지표는 데이터의 총합입니다.'
     },
     {
@@ -1387,7 +1392,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '1.36',
-      score: 20,
+      score: 6,
       explanation: '가장 많은 결측치를 보유한 컬럼의 결측치 비율 수치입니다.'
     },
     {
@@ -1400,7 +1405,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Hours_Studied, Exam_Score', 'Exam_Score, Tutoring_Sessions', 'Exam_Score, Attendance', 'Previous_Scores, Exam_Score'],
       answer: 'Exam_Score, Attendance',
-      score: 20,
+      score: 6,
       explanation: '상관계수 절댓값이 가장 높은 수치형 변수 조합은 Exam_Score와 Attendance입니다.'
     },
     {
@@ -1412,7 +1417,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 탐색',
       type: 'text',
       answer: '8',
-      score: 20,
+      score: 6,
       explanation: 'Hours_Studied >= 38 및 Gender == Female 조건의 데이터 수입니다.'
     },
     {
@@ -1425,7 +1430,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Low', 'Medium', 'High'],
       answer: 'Medium',
-      score: 20,
+      score: 6,
       explanation: 'Sleep_Hours가 7인 학생 집단 중 Motivation_Level 비율이 가장 높은 범주는 Medium입니다.'
     },
     {
@@ -1438,7 +1443,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Yes, Public', 'Yes, Private', 'No, Public', 'No, Private'],
       answer: 'No, Public',
-      score: 20,
+      score: 6,
       explanation: 'Hours_Studied 시각화 박스플롯 결과 이상치가 없는 범주 조합은 No, Public입니다.'
     },
     {
@@ -1450,7 +1455,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '데이터 전처리',
       type: 'text',
       answer: '50.14',
-      score: 20,
+      score: 6,
       explanation: 'Parental_Education_Level 최빈값 대체 후 최빈값의 비율 수치입니다.'
     },
     {
@@ -1462,7 +1467,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '피처 인코딩',
       type: 'text',
       answer: '23',
-      score: 20,
+      score: 6,
       explanation: '인코딩 적용 및 기존 컬럼 삭제 후 최종 데이터셋의 전체 컬럼 수입니다.'
     },
     {
@@ -1475,7 +1480,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Linear Regression', 'Random Forest', 'LightGBM'],
       answer: 'Linear Regression',
-      score: 20,
+      score: 8,
       explanation: 'Linear Regression 모델이 R2 설명력 성능에서 평균적으로 가장 우수한 성적을 냅니다.'
     },
     {
@@ -1487,7 +1492,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '딥러닝 모델링',
       type: 'text',
       answer: '0.2121',
-      score: 20,
+      score: 8,
       explanation: '딥러닝 모델 학습 후 산출된 MAE 검증 수치입니다.'
     },
     {
@@ -1500,7 +1505,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       type: 'single',
       options: ['Hours_Studied', 'Sleep_Hours', 'Parental_Involvement_OE', 'Attendance'],
       answer: 'Sleep_Hours',
-      score: 20,
+      score: 8,
       explanation: '학생 성적 예측 딥러닝 모델 상위 5개 변수 중 Sleep_Hours는 포함되지 않습니다.'
     },
     {
@@ -1512,7 +1517,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 추론',
       type: 'text',
       answer: '66',
-      score: 20,
+      score: 8,
       explanation: '지정된 학생 조건 입력 시 예측되는 최종 시험 점수 정수 수치입니다.'
     },
     {
@@ -1524,7 +1529,7 @@ const MOCK_PROBLEMS: Record<string, Problem[]> = {
       category: '모델 고도화',
       type: 'text',
       answer: '0.2020',
-      score: 20,
+      score: 8,
       explanation: 'Optimizer=sgd, Learning Rate=0.1, Early Stopping Patience=10 고도화 후 산출된 MAE 수치입니다.'
     }
   ]
@@ -1914,7 +1919,7 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
     options: p.options ? (typeof p.options === 'string' ? p.options : JSON.stringify(p.options)) : null,
     answer: String(p.answer || ''),
     csv_url: p.csv_url || null,
-    score: Number(p.score || 20),
+    score: Number(p.score || getScoreByOrderNum(p.order_num || idx + 1)),
     explanation: p.explanation || ''
   }));
 
@@ -2063,10 +2068,30 @@ function getLocalSubmissions(): Submission[] {
   }
 }
 
+function normalizeSubmission(item: any): Submission {
+  let score = item.score;
+  let total_score = item.total_score || 100;
+  let pass_status = item.pass_status;
+
+  if (total_score === 300) {
+    score = Math.round((score / 300) * 100);
+    total_score = 100;
+    pass_status = score >= 80 ? 'PASS' : 'FAIL';
+  }
+
+  return {
+    ...item,
+    score,
+    total_score,
+    pass_status,
+    exam_title: item.aice_exams?.title || item.exam_title || 'AICE Basic 모의고사'
+  } as Submission;
+}
+
 export async function fetchSubmissionsByStudent(school: string, studentId: string): Promise<Submission[]> {
   const localSubs = getLocalSubmissions().filter(
     s => s.school === school && s.student_id === studentId
-  );
+  ).map(normalizeSubmission);
 
   if (supabase) {
     try {
@@ -2079,10 +2104,7 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
         .order('submitted_at', { ascending: false });
 
       if (!error && data) {
-        return data.map((item: any) => ({
-          ...item,
-          exam_title: item.aice_exams?.title || 'AICE Basic 모의고사'
-        })) as Submission[];
+        return data.map(normalizeSubmission);
       }
     } catch (e) {
       console.warn('Supabase fetchSubmissionsByStudent error:', e);
@@ -2102,15 +2124,12 @@ export async function fetchAllSubmissions(): Promise<Submission[]> {
         .order('submitted_at', { ascending: false });
 
       if (!error && data) {
-        return data.map((item: any) => ({
-          ...item,
-          exam_title: item.aice_exams?.title || 'AICE Basic 모의고사'
-        })) as Submission[];
+        return data.map(normalizeSubmission);
       }
     } catch (e) {
       console.warn('Supabase fetchAllSubmissions error:', e);
     }
   }
 
-  return getLocalSubmissions();
+  return getLocalSubmissions().map(normalizeSubmission);
 }

@@ -78,7 +78,7 @@ export default function AdminPage() {
   const [newExamOverview, setNewExamOverview] = useState('');
   const [newExamTimeLimit, setNewExamTimeLimit] = useState(60);
   const [newExamTotalQuestions, setNewExamTotalQuestions] = useState(15);
-  const [newExamPassScore, setNewExamPassScore] = useState(70);
+  const [newExamPassScore, setNewExamPassScore] = useState(80);
   const [isCreatingExam, setIsCreatingExam] = useState(false);
   const [examMsg, setExamMsg] = useState('');
 
@@ -89,7 +89,7 @@ export default function AdminPage() {
   const [editExamOverview, setEditExamOverview] = useState('');
   const [editExamTimeLimit, setEditExamTimeLimit] = useState(60);
   const [editExamTotalQuestions, setEditExamTotalQuestions] = useState(15);
-  const [editExamPassScore, setEditExamPassScore] = useState(70);
+  const [editExamPassScore, setEditExamPassScore] = useState(80);
   const [editExamCsvUrl, setEditExamCsvUrl] = useState('');
   const [isUploadingEditCsv, setIsUploadingEditCsv] = useState(false);
   const [isUpdatingExam, setIsUpdatingExam] = useState(false);
