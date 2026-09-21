@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getStoredSession, fetchExams, fetchSubmissionsByStudent } from '@/lib/supabase';
+import { getStoredSession, fetchExams, fetchSubmissionsByStudent, syncLocalSubmissionsToSupabase } from '@/lib/supabase';
 import { StudentSession, Exam, Submission } from '@/types/database';
 import { 
   FileText, 
@@ -19,7 +19,8 @@ import {
   Play,
   ShieldCheck,
   BarChart2,
-  Lock
+  Lock,
+  RefreshCw
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const currentSession = getStoredSession();
@@ -39,6 +41,11 @@ export default function DashboardPage() {
 
     async function loadDashboardData(sess: StudentSession) {
       setLoading(true);
+      try {
+        await syncLocalSubmissionsToSupabase();
+      } catch (e) {
+        console.warn('Dashboard sync error:', e);
+      }
       const examData = await fetchExams();
       setExams(examData);
 
@@ -49,6 +56,20 @@ export default function DashboardPage() {
 
     loadDashboardData(currentSession);
   }, [router]);
+
+  const handleManualSync = async () => {
+    if (!session) return;
+    setIsSyncing(true);
+    try {
+      await syncLocalSubmissionsToSupabase();
+      const freshSubData = await fetchSubmissionsByStudent(session.school, session.student_id);
+      setSubmissions(freshSubData);
+    } catch (e) {
+      console.warn('Manual sync error:', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (!session) return null;
 
@@ -194,9 +215,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-            누적 {submissions.length}건
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 transition-colors disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? '동기화 중...' : '데이터 새로고침'}</span>
+            </button>
+            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+              누적 {submissions.length}건
+            </span>
+          </div>
         </div>
 
         {submissions.length === 0 ? (

@@ -2165,19 +2165,35 @@ function normalizeSubmission(item: any): Submission {
 }
 
 export async function fetchSubmissionsByStudent(school: string, studentId: string): Promise<Submission[]> {
-  const localSubs = getLocalSubmissions().filter(
-    s => s.school === school && s.student_id === studentId
-  ).map(normalizeSubmission);
+  const cleanSchool = school ? school.trim() : '';
+  const cleanStudentId = studentId ? studentId.trim() : '';
+
+  // 1. Auto-sync local submissions to Supabase first
+  try {
+    await syncLocalSubmissionsToSupabase();
+  } catch (e) {
+    console.warn('Auto sync in fetchSubmissionsByStudent failed:', e);
+  }
+
+  // 2. Fetch local storage submissions with flexible matching
+  const localSubs = getLocalSubmissions().filter(s => {
+    if (!s.student_id) return false;
+    const matchId = s.student_id.trim() === cleanStudentId;
+    if (!matchId) return false;
+    if (!cleanSchool) return true;
+    const sSchool = s.school ? s.school.trim() : '';
+    return sSchool === cleanSchool || sSchool.includes(cleanSchool) || cleanSchool.includes(sSchool);
+  }).map(normalizeSubmission);
 
   if (supabase) {
     try {
       let dataList: any[] | null = null;
+      // Query by student_id to be resilient against minor school name variations
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_submissions')
         .select('*, aice_exams(title)')
-        .eq('school', school)
-        .eq('student_id', studentId)
+        .eq('student_id', cleanStudentId)
         .order('submitted_at', { ascending: false });
 
       if (!error && data) {
@@ -2187,8 +2203,7 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
           .schema('aice')
           .from('aice_submissions')
           .select('*')
-          .eq('school', school)
-          .eq('student_id', studentId)
+          .eq('student_id', cleanStudentId)
           .order('submitted_at', { ascending: false });
         if (plainData) dataList = plainData;
       }
