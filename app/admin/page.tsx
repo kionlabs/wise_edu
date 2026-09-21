@@ -14,7 +14,8 @@ import {
   uploadCsvDataset,
   updateExamCsvUrl,
   toggleExamResultRelease,
-  checkAnswerCorrect
+  checkAnswerCorrect,
+  syncLocalSubmissionsToSupabase
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -51,7 +52,8 @@ import {
   ListChecks,
   PlusCircle,
   FileText,
-  Building2
+  Building2,
+  RefreshCw
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -324,12 +326,29 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Sync & Refresh Submissions Handler
+  const [isSyncingSubmissions, setIsSyncingSubmissions] = useState<boolean>(false);
+
+  const handleSyncAndRefreshSubmissions = async () => {
+    setIsSyncingSubmissions(true);
+    try {
+      await syncLocalSubmissionsToSupabase();
+      const freshSubs = await fetchAllSubmissions();
+      setSubmissions(freshSubs);
+    } catch (e) {
+      console.warn('Sync submissions error:', e);
+    } finally {
+      setIsSyncingSubmissions(false);
+    }
+  };
+
   // Fetch Admin Data
   useEffect(() => {
     if (!isAuthenticated) return;
 
     async function loadAdminData() {
       setLoading(true);
+      await syncLocalSubmissionsToSupabase();
       const subData = await fetchAllSubmissions();
       const examData = await fetchExams();
       setSubmissions(subData);
@@ -1064,13 +1083,25 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <button
-                onClick={exportToCSV}
-                className="w-full lg:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                <span>전체 성적 CSV 내보내기 (소속 포함)</span>
-              </button>
+              <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+                <button
+                  onClick={handleSyncAndRefreshSubmissions}
+                  disabled={isSyncingSubmissions}
+                  className="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-xl border border-purple-200 shadow-2xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                  title="Supabase DB 성적 동기화 및 새로고침"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isSyncingSubmissions ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingSubmissions ? '동기화 중...' : 'DB 새로고침'}</span>
+                </button>
+
+                <button
+                  onClick={exportToCSV}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>전체 성적 CSV 내보내기 (소속 포함)</span>
+                </button>
+              </div>
             </div>
 
             {/* Submissions Table */}

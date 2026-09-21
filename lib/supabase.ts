@@ -2013,19 +2013,57 @@ export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<
   return false;
 }
 
+async function ensureExamExists(examId: string) {
+  if (!supabase) return;
+  try {
+    const { data } = await supabase
+      .schema('aice')
+      .from('aice_exams')
+      .select('id')
+      .eq('id', examId)
+      .maybeSingle();
+
+    if (!data) {
+      const mock = MOCK_EXAMS.find(m => m.id === examId);
+      if (mock) {
+        await supabase
+          .schema('aice')
+          .from('aice_exams')
+          .upsert([{
+            id: mock.id,
+            title: mock.title,
+            description: mock.description,
+            time_limit_minutes: mock.time_limit_minutes,
+            total_questions: mock.total_questions,
+            pass_score: mock.pass_score,
+            is_result_released: mock.is_result_released ?? true,
+            overview: mock.overview || null
+          }], { onConflict: 'id' });
+      }
+    }
+  } catch (e) {
+    console.warn('ensureExamExists warning:', e);
+  }
+}
+
 export async function saveSubmission(submission: Omit<Submission, 'id' | 'submitted_at'>): Promise<Submission> {
   const newSubmission: Submission = {
     ...submission,
-    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub_${Date.now()}`,
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     submitted_at: new Date().toISOString()
   };
 
   if (supabase) {
     try {
+      // 1. Ensure foreign key exam record exists in Supabase DB
+      await ensureExamExists(submission.exam_id);
+
+      // 2. Insert submission with explicit ID and submitted_at timestamp
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_submissions')
         .insert([{
+          id: newSubmission.id,
           exam_id: submission.exam_id,
           school: submission.school,
           student_id: submission.student_id,
@@ -2033,7 +2071,8 @@ export async function saveSubmission(submission: Omit<Submission, 'id' | 'submit
           answers: submission.answers,
           score: submission.score,
           total_score: submission.total_score,
-          pass_status: submission.pass_status
+          pass_status: submission.pass_status,
+          submitted_at: newSubmission.submitted_at
         }])
         .select()
         .single();
@@ -2041,14 +2080,51 @@ export async function saveSubmission(submission: Omit<Submission, 'id' | 'submit
       if (!error && data) {
         saveLocalSubmission(data as Submission);
         return data as Submission;
+      } else if (error) {
+        console.warn('Supabase saveSubmission insert error:', error);
       }
     } catch (e) {
-      console.warn('Supabase saveSubmission error, saving locally:', e);
+      console.warn('Supabase saveSubmission exception:', e);
     }
   }
 
   saveLocalSubmission(newSubmission);
   return newSubmission;
+}
+
+export async function syncLocalSubmissionsToSupabase(): Promise<number> {
+  if (!supabase) return 0;
+  const localSubs = getLocalSubmissions();
+  if (localSubs.length === 0) return 0;
+
+  let syncedCount = 0;
+  for (const sub of localSubs) {
+    try {
+      await ensureExamExists(sub.exam_id);
+      const { error } = await supabase
+        .schema('aice')
+        .from('aice_submissions')
+        .upsert([{
+          id: sub.id,
+          exam_id: sub.exam_id,
+          school: sub.school,
+          student_id: sub.student_id,
+          student_name: sub.student_name,
+          answers: sub.answers,
+          score: sub.score,
+          total_score: sub.total_score,
+          pass_status: sub.pass_status,
+          submitted_at: sub.submitted_at
+        }], { onConflict: 'id' });
+
+      if (!error) {
+        syncedCount++;
+      }
+    } catch (e) {
+      console.warn('Sync local submission exception:', e);
+    }
+  }
+  return syncedCount;
 }
 
 function saveLocalSubmission(sub: Submission) {
@@ -2095,6 +2171,7 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
 
   if (supabase) {
     try {
+      let dataList: any[] | null = null;
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_submissions')
@@ -2104,7 +2181,33 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
         .order('submitted_at', { ascending: false });
 
       if (!error && data) {
-        return data.map(normalizeSubmission);
+        dataList = data;
+      } else {
+        const { data: plainData } = await supabase
+          .schema('aice')
+          .from('aice_submissions')
+          .select('*')
+          .eq('school', school)
+          .eq('student_id', studentId)
+          .order('submitted_at', { ascending: false });
+        if (plainData) dataList = plainData;
+      }
+
+      if (dataList) {
+        const normalized = dataList.map((item: any) => {
+          const mock = MOCK_EXAMS.find(m => m.id === item.exam_id);
+          const title = item.aice_exams?.title || mock?.title || item.exam_title || 'AICE Basic 모의고사';
+          return normalizeSubmission({ ...item, exam_title: title });
+        });
+
+        const map = new Map<string, Submission>();
+        normalized.forEach(s => map.set(s.id, s));
+        localSubs.forEach(s => {
+          if (!map.has(s.id)) map.set(s.id, s);
+        });
+        return Array.from(map.values()).sort(
+          (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+        );
       }
     } catch (e) {
       console.warn('Supabase fetchSubmissionsByStudent error:', e);
@@ -2117,6 +2220,9 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
 export async function fetchAllSubmissions(): Promise<Submission[]> {
   if (supabase) {
     try {
+      let dataList: any[] | null = null;
+
+      // 1. Try join query with aice_exams(title)
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_submissions')
@@ -2124,10 +2230,44 @@ export async function fetchAllSubmissions(): Promise<Submission[]> {
         .order('submitted_at', { ascending: false });
 
       if (!error && data) {
-        return data.map(normalizeSubmission);
+        dataList = data;
+      } else {
+        if (error) console.warn('Supabase fetchAllSubmissions join error, trying plain select:', error);
+        // 2. Fallback to plain select if join query failed
+        const { data: plainData, error: plainError } = await supabase
+          .schema('aice')
+          .from('aice_submissions')
+          .select('*')
+          .order('submitted_at', { ascending: false });
+
+        if (!plainError && plainData) {
+          dataList = plainData;
+        } else if (plainError) {
+          console.warn('Supabase fetchAllSubmissions plain error:', plainError);
+        }
+      }
+
+      if (dataList) {
+        const exams = MOCK_EXAMS;
+        const normalized = dataList.map((item: any) => {
+          const matchedExam = exams.find(e => e.id === item.exam_id);
+          const title = item.aice_exams?.title || matchedExam?.title || item.exam_title || 'AICE Basic 모의고사';
+          return normalizeSubmission({ ...item, exam_title: title });
+        });
+
+        const localSubs = getLocalSubmissions().map(normalizeSubmission);
+        const map = new Map<string, Submission>();
+        normalized.forEach(s => map.set(s.id, s));
+        localSubs.forEach(s => {
+          if (!map.has(s.id)) map.set(s.id, s);
+        });
+
+        return Array.from(map.values()).sort(
+          (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+        );
       }
     } catch (e) {
-      console.warn('Supabase fetchAllSubmissions error:', e);
+      console.warn('Supabase fetchAllSubmissions exception:', e);
     }
   }
 
