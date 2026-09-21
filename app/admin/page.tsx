@@ -15,7 +15,9 @@ import {
   updateExamCsvUrl,
   toggleExamResultRelease,
   checkAnswerCorrect,
-  syncLocalSubmissionsToSupabase
+  syncLocalSubmissionsToSupabase,
+  saveSubmission,
+  MOCK_STUDENTS
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -585,9 +587,86 @@ export default function AdminPage() {
     reader.readAsText(file);
   };
 
-  // Extract Unique School/Organization List
+  // Sample Submissions Seeding Handler
+  const [isSeeding, setIsSeeding] = useState<boolean>(false);
+
+  const handleCreateSampleSubmissions = async () => {
+    setIsSeeding(true);
+    try {
+      const sampleList = [
+        {
+          exam_id: 'a1111111-1111-1111-1111-111111111111',
+          school: '남원용성고',
+          student_id: '1101',
+          student_name: '김재영',
+          answers: { p101: '분류 모형', p102: '2', p103: 'JobSatisfaction', p104: '14235', p105: '127', p106: 'JobInvolvement', p107: '58', p108: '퇴사함', p109: '468', p110: '1413', p111: '1', p112: 'Random Forest', p113: '0.8524', p114: '1: 퇴사함', p115: '0.8850' },
+          score: 100,
+          total_score: 100,
+          pass_status: 'PASS' as const
+        },
+        {
+          exam_id: 'a1111111-1111-1111-1111-111111111111',
+          school: '남원용성고',
+          student_id: '1103',
+          student_name: '안아람',
+          answers: { p101: '분류 모형', p102: '2', p103: 'Department', p104: '14000', p105: '127', p106: 'Age', p107: '58', p108: '퇴사하지 않음', p109: '468', p110: '1413', p111: '1', p112: 'Decision Tree', p113: '0.8000', p114: '0: 퇴사하지 않음', p115: '0.8500' },
+          score: 68,
+          total_score: 100,
+          pass_status: 'FAIL' as const
+        },
+        {
+          exam_id: 'a1111111-1111-1111-1111-111111111111',
+          school: '남원용성고',
+          student_id: '1108',
+          student_name: '이학준',
+          answers: { p101: '분류 모형', p102: '2', p103: 'JobSatisfaction', p104: '14235', p105: '127', p106: 'JobInvolvement', p107: '58', p108: '퇴사함', p109: '468', p110: '1413', p111: '1', p112: 'Random Forest', p113: '0.8524', p114: '1: 퇴사함', p115: '0.8850' },
+          score: 100,
+          total_score: 100,
+          pass_status: 'PASS' as const
+        },
+        {
+          exam_id: 'a1111111-1111-1111-1111-111111111111',
+          school: '한국고등학교',
+          student_id: '20260101',
+          student_name: '홍길동',
+          answers: { p101: '분류 모형', p102: '2', p103: 'JobSatisfaction', p104: '14235', p105: '127', p106: 'JobInvolvement', p107: '58', p108: '퇴사함', p109: '468', p110: '1413', p111: '1', p112: 'Random Forest', p113: '0.8000', p114: '1: 퇴사함', p115: '0.8500' },
+          score: 84,
+          total_score: 100,
+          pass_status: 'PASS' as const
+        },
+        {
+          exam_id: 'a1111111-1111-1111-1111-111111111111',
+          school: '테스트기관',
+          student_id: '0011',
+          student_name: '관리자',
+          answers: { p101: '분류 모형', p102: '2', p103: 'JobSatisfaction', p104: '14235', p105: '127', p106: 'JobInvolvement', p107: '58', p108: '퇴사함', p109: '468', p110: '1413', p111: '1', p112: 'Random Forest', p113: '0.8524', p114: '1: 퇴사함', p115: '0.8850' },
+          score: 100,
+          total_score: 100,
+          pass_status: 'PASS' as const
+        }
+      ];
+
+      for (const sample of sampleList) {
+        await saveSubmission(sample);
+      }
+
+      const freshSubs = await fetchAllSubmissions();
+      setSubmissions(freshSubs);
+      alert('🎉 남원용성고 포함 테스트 제출 성적 샘플 데이터 5건이 DB에 저장되었습니다!');
+    } catch (e) {
+      console.warn('Sample seed error:', e);
+      alert('샘플 성적 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  // Extract Unique School/Organization List (Combining MOCK_STUDENTS & Submissions)
   const schoolOptions = Array.from(
-    new Set(submissions.map((s) => s.school).filter((sch) => sch && sch.trim().length > 0))
+    new Set([
+      ...MOCK_STUDENTS.map((s) => s.school),
+      ...submissions.map((s) => s.school)
+    ].filter((sch) => sch && sch.trim().length > 0))
   ).sort();
 
   // Submissions Filtering
@@ -1112,9 +1191,30 @@ export default function AdminPage() {
                   <p className="text-xs font-semibold">학생 성적 데이터를 불러오는 중입니다...</p>
                 </div>
               ) : filteredSubmissions.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 space-y-2">
+                <div className="p-10 text-center text-slate-500 space-y-4">
                   <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto" />
-                  <p className="font-semibold text-sm">조건에 일치하는 응시 기록이 없습니다.</p>
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm text-slate-800">
+                      {submissions.length === 0 
+                        ? '현재 Supabase DB에 저장된 학생 응시 기록이 0건입니다.' 
+                        : '선택하신 검색 조건에 일치하는 응시 기록이 없습니다.'}
+                    </p>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                      학생들이 실전 모의고사 응시 페이지에서 [최종 답안 제출하기] 버튼을 누르면 DB에 실시간으로 전송되어 이 곳에 성적과 제출 답안이 표시됩니다.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateSampleSubmissions}
+                      disabled={isSeeding}
+                      className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition inline-flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                      <span>{isSeeding ? '샘플 성적 DB 생성 중...' : '🧪 남원용성고 포함 테스트 성적 샘플 5건 DB에 즉시 생성하기'}</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
