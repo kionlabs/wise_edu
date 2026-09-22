@@ -1549,7 +1549,9 @@ function getLocalExams(): Exam[] {
     custom.forEach(e => {
       if (e && e.id) {
         const mock = MOCK_EXAMS.find(m => m.id === e.id);
-        const useOverview = (e.overview && e.overview.length >= 300) ? e.overview : (mock?.overview || e.overview);
+        const useOverview = (mock && mock.id === 'f6666666-6666-6666-6666-666666666666' && e.overview?.includes('퇴사여부'))
+          ? mock.overview
+          : ((e.overview && e.overview.length >= 300) ? e.overview : (mock?.overview || e.overview));
         const merged: Exam = {
           ...e,
           overview: useOverview
@@ -1635,15 +1637,32 @@ export async function fetchExams(): Promise<Exam[]> {
         .order('created_at', { ascending: true });
       if (!error && data && data.length > 0) {
         const uniqueMap = new Map<string, Exam>();
-        data.forEach((item: any) => {
+        for (const item of data) {
           const mock = MOCK_EXAMS.find(m => m.id === item.id);
-          const useOverview = (item.overview && item.overview.length >= 300) ? item.overview : (mock?.overview || item.overview);
+          let useOverview = item.overview;
+
+          // If built-in exam or if DB overview has stale/contradictory text (e.g., '퇴사여부' inside Exam 4)
+          if (mock) {
+            if (!useOverview || useOverview.length < 50 || useOverview.includes('퇴사여부') && item.id === 'f6666666-6666-6666-6666-666666666666') {
+              useOverview = mock.overview;
+              // Auto-repair DB row in background
+              supabase
+                .schema('aice')
+                .from('aice_exams')
+                .update({ overview: mock.overview, title: mock.title })
+                .eq('id', item.id)
+                .then();
+            } else if (item.id === 'f6666666-6666-6666-6666-666666666666' && useOverview.includes('퇴사여부')) {
+              useOverview = mock.overview;
+            }
+          }
+
           const examObj: Exam = {
             ...item,
-            overview: useOverview
+            overview: useOverview || mock?.overview || item.overview
           };
           uniqueMap.set(item.id, examObj);
-        });
+        }
         return Array.from(uniqueMap.values());
       }
     } catch (e) {
@@ -1700,10 +1719,21 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
         .single();
       if (!error && data) {
         const mock = MOCK_EXAMS.find(m => m.id === data.id);
-        const useOverview = (data.overview && data.overview.length >= 300) ? data.overview : (mock?.overview || data.overview);
+        let useOverview = data.overview;
+        if (mock) {
+          if (!useOverview || useOverview.includes('퇴사여부') && data.id === 'f6666666-6666-6666-6666-666666666666') {
+            useOverview = mock.overview;
+            supabase
+              .schema('aice')
+              .from('aice_exams')
+              .update({ overview: mock.overview, title: mock.title })
+              .eq('id', data.id)
+              .then();
+          }
+        }
         return {
           ...data,
-          overview: useOverview
+          overview: useOverview || mock?.overview || data.overview
         } as Exam;
       }
     } catch (e) {
