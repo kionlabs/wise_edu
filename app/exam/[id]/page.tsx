@@ -215,9 +215,9 @@ export default function ExamPage({ params }: ExamPageProps) {
   })();
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] max-w-[1700px] mx-auto pb-6">
+    <div className="flex flex-col min-h-[calc(100vh-3.5rem)] w-full max-w-[1920px] mx-auto pb-4 px-2 sm:px-4">
       {/* Top Fixed Header Bar */}
-      <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 shrink-0">
+      <div className="bg-slate-900 text-white p-3.5 sm:p-4 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 mb-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-md">
             AICE
@@ -231,7 +231,7 @@ export default function ExamPage({ params }: ExamPageProps) {
                 • {session?.school} {session?.student_id} {session?.student_name}
               </span>
             </div>
-            <h1 className="text-base sm:text-lg font-black tracking-tight text-white line-clamp-1">
+            <h1 className="text-base sm:text-xl font-black tracking-tight text-white line-clamp-1">
               {exam.title}
             </h1>
           </div>
@@ -242,13 +242,13 @@ export default function ExamPage({ params }: ExamPageProps) {
           <a
             href={datasetCsvUrl}
             download
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition animate-pulse"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition animate-pulse"
           >
             <Download className="w-4 h-4" />
             <span>실습용 CSV 데이터셋 다운로드</span>
           </a>
 
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black tracking-wider shadow-inner ${
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg sm:text-xl font-black tracking-wider shadow-inner ${
             timeLeft < 300 
               ? 'bg-rose-500 text-white border border-rose-300 animate-bounce' 
               : 'bg-slate-800 text-emerald-400 border border-slate-700'
@@ -260,38 +260,38 @@ export default function ExamPage({ params }: ExamPageProps) {
       </div>
 
       {/* Main Split Screen Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
         
         {/* ============================================================== */}
-        {/* LEFT PANEL: Exam Guide & Dataset Info (Approx. 70% Width)     */}
+        {/* LEFT PANEL: Exam Guide & Dataset Info (50% Width)              */}
         {/* ============================================================== */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col space-y-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-1">
+        <div className="lg:col-span-6 flex flex-col space-y-4 overflow-y-auto lg:max-h-[calc(100vh-6.5rem)] min-h-[650px] pr-2">
           
           {/* Section 1: Exam Background & Task Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-purple-600" />
-                <h2 className="text-base font-extrabold text-slate-900">
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
                   시험 문제 개요 & 과제 수행 가이드 (PDF Page 1)
                 </h2>
               </div>
-              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
+              <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs sm:text-sm font-extrabold rounded-lg border border-purple-200">
                 과제: {parsedOverview.subject}
               </span>
             </div>
 
             {/* Structured Info Boxes */}
-            <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
+            <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 주제</span>
-                <p className="font-bold text-slate-900 text-sm">{parsedOverview.subject}</p>
+                <span className="font-extrabold text-purple-900 block text-xs uppercase tracking-wider">■ 주제</span>
+                <p className="font-bold text-slate-900 text-sm sm:text-base">{parsedOverview.subject}</p>
               </div>
 
               {parsedOverview.background && (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 배경</span>
-                  <p className="text-slate-800 leading-relaxed whitespace-pre-line">
+                  <span className="font-extrabold text-purple-900 block text-xs uppercase tracking-wider">■ 배경</span>
+                  <p className="text-slate-800 leading-relaxed whitespace-pre-line text-xs sm:text-sm">
                     {parsedOverview.background}
                   </p>
                 </div>
@@ -299,8 +299,8 @@ export default function ExamPage({ params }: ExamPageProps) {
 
               {parsedOverview.task && (
                 <div className="p-4 bg-purple-50/80 rounded-xl border border-purple-200 space-y-1">
-                  <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 과제명</span>
-                  <p className="font-bold text-purple-950 text-sm">
+                  <span className="font-extrabold text-purple-900 block text-xs uppercase tracking-wider">■ 과제명</span>
+                  <p className="font-bold text-purple-950 text-sm sm:text-base">
                     {parsedOverview.task}
                   </p>
                 </div>
@@ -310,29 +310,29 @@ export default function ExamPage({ params }: ExamPageProps) {
 
           {/* Section 2: Data Columns 명세 Table */}
           {parsedOverview.columns.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Database className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                   ■ 데이터 컬럼명 명세 (Data Column Definitions)
                 </h3>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
-                    <tr className="bg-slate-900 text-white font-extrabold uppercase text-[11px]">
-                      <th className="py-3 px-4 w-1/3">컬럼명 (Column)</th>
-                      <th className="py-3 px-4">설명 및 범주 (Description)</th>
+                    <tr className="bg-slate-900 text-white font-extrabold uppercase text-[11px] sm:text-xs">
+                      <th className="py-3.5 px-4 w-1/3">컬럼명 (Column)</th>
+                      <th className="py-3.5 px-4">설명 및 범주 (Description)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {parsedOverview.columns.map((col, idx) => (
                       <tr key={idx} className="hover:bg-slate-50 transition">
-                        <td className="py-2.5 px-4 font-mono font-bold text-purple-950 bg-purple-50/50">
+                        <td className="py-3 px-4 font-mono font-bold text-purple-950 bg-purple-50/50">
                           {col.name}
                         </td>
-                        <td className="py-2.5 px-4 font-semibold text-slate-800">
+                        <td className="py-3 px-4 font-semibold text-slate-800">
                           {col.desc}
                         </td>
                       </tr>
@@ -341,7 +341,7 @@ export default function ExamPage({ params }: ExamPageProps) {
                 </table>
               </div>
 
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-2">
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs font-medium flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
                   위 데이터 컬럼 명세를 참고하여 파이썬 AIDU 또는 Jupyter Notebook에서 실습용 CSV 데이터를 탐색하고 모델을 구축하세요.
@@ -352,38 +352,38 @@ export default function ExamPage({ params }: ExamPageProps) {
         </div>
 
         {/* ============================================================== */}
-        {/* RIGHT PANEL: Vertical Scrollable 15 Questions List (30% Width) */}
+        {/* RIGHT PANEL: Vertical Scrollable 15 Questions List (50% Width) */}
         {/* ============================================================== */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col space-y-4 max-h-[calc(100vh-10rem)]">
+        <div className="lg:col-span-6 flex flex-col space-y-4 lg:max-h-[calc(100vh-6.5rem)] min-h-[700px]">
           
           {/* Quick Question Jump Pill Bar & Progress Header */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ListChecks className="w-5 h-5 text-purple-600" />
-                <h3 className="text-sm font-extrabold text-slate-900">문제 풀이 & 답안 작성</h3>
+                <ListChecks className="w-5.5 h-5.5 text-purple-600" />
+                <h3 className="text-base font-extrabold text-slate-900">문제 풀이 & 답안 작성</h3>
               </div>
-              <span className="text-xs font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+              <span className="text-xs sm:text-sm font-black text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200">
                 {answeredCount} / {problems.length} 문항 완료
               </span>
             </div>
 
             {/* Quick Jumper Grid (1 ~ 15) */}
-            <div className="grid grid-cols-5 gap-1.5 pt-1">
+            <div className="grid grid-cols-5 gap-2 pt-1">
               {problems.map((p) => {
                 const isAnswered = Boolean(answers[p.id]);
                 return (
                   <button
                     key={p.id}
                     onClick={() => scrollToProblem(p.order_num)}
-                    className={`py-1.5 rounded-lg font-mono font-extrabold text-xs transition border flex items-center justify-center gap-1 ${
+                    className={`py-2 rounded-xl font-mono font-black text-xs sm:text-sm transition border flex items-center justify-center gap-1 ${
                       isAnswered
                         ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs'
                         : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-purple-100 hover:text-purple-900'
                     }`}
                   >
                     <span>Q{p.order_num}</span>
-                    {isAnswered && <Check className="w-3 h-3 text-white" />}
+                    {isAnswered && <Check className="w-3.5 h-3.5 text-white" />}
                   </button>
                 );
               })}
@@ -391,7 +391,7 @@ export default function ExamPage({ params }: ExamPageProps) {
           </div>
 
           {/* Scrollable Questions Continuous List (Q1 to Q15) */}
-          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2 min-h-[450px]">
             {problems.map((p) => {
               const isAnswered = Boolean(answers[p.id]);
 
@@ -399,40 +399,40 @@ export default function ExamPage({ params }: ExamPageProps) {
                 <div
                   key={p.id}
                   id={`question-card-${p.order_num}`}
-                  className={`bg-white rounded-2xl border p-5 shadow-xs transition space-y-4 ${
-                    isAnswered ? 'border-emerald-300 ring-1 ring-emerald-500/20' : 'border-slate-200'
+                  className={`bg-white rounded-2xl border p-6 shadow-xs transition space-y-5 ${
+                    isAnswered ? 'border-emerald-400 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {/* Problem Badge Header */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center ${
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-8 h-8 rounded-xl font-black text-sm flex items-center justify-center shadow-xs ${
                         isAnswered ? 'bg-emerald-600 text-white' : 'bg-purple-600 text-white'
                       }`}>
                         Q{p.order_num}
                       </span>
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-md">
+                      <span className="px-3 py-1 bg-slate-100 text-slate-800 font-extrabold text-xs sm:text-sm rounded-lg">
                         {p.category}
                       </span>
-                      <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200/60">
                         {p.type === 'single' ? '객관식' : '단답형'}
                       </span>
                     </div>
 
                     {isAnswered && (
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold text-[11px] rounded flex items-center gap-1">
-                        <Check className="w-3 h-3" /> 작성 완료
+                      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-extrabold text-xs rounded-lg flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> 작성 완료
                       </span>
                     )}
                   </div>
 
                   {/* Problem Title & Text */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-extrabold text-slate-900 leading-snug">
+                  <div className="space-y-2.5">
+                    <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
                       {p.title}
                     </h4>
                     {p.description && (
-                      <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-200/80 font-medium">
                         {p.description}
                       </p>
                     )}
@@ -441,25 +441,25 @@ export default function ExamPage({ params }: ExamPageProps) {
                   {/* Answer Input Controls */}
                   <div className="pt-1">
                     {p.type === 'single' && p.options && (
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {p.options.map((option, idx) => {
                           const isSelected = answers[p.id] === option;
                           return (
                             <label
                               key={idx}
                               onClick={() => handleSelectAnswer(p.id, option)}
-                              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer text-xs transition ${
+                              className={`flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border cursor-pointer text-xs sm:text-sm font-semibold transition ${
                                 isSelected
-                                  ? 'bg-purple-50 border-purple-500 text-purple-950 font-bold shadow-xs'
+                                  ? 'bg-purple-50 border-purple-500 text-purple-950 font-bold shadow-xs ring-1 ring-purple-400/30'
                                   : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
                               }`}
                             >
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
                                 isSelected ? 'border-purple-600 bg-purple-600 text-white' : 'border-slate-300'
                               }`}>
-                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
                               </div>
-                              <span className="leading-tight">{option}</span>
+                              <span className="leading-snug">{option}</span>
                             </label>
                           );
                         })}
@@ -473,9 +473,9 @@ export default function ExamPage({ params }: ExamPageProps) {
                           value={answers[p.id] || ''}
                           onChange={(e) => handleSelectAnswer(p.id, e.target.value)}
                           placeholder="정답 수치 또는 텍스트 입력 (예: 14235)"
-                          className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition text-purple-950"
+                          className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm sm:text-base font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition text-purple-950"
                         />
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-xs text-slate-400">
                           * 문제 지문에서 요구하는 정수/소수점 형식을 정확히 작성해 주세요.
                         </p>
                       </div>
@@ -490,9 +490,9 @@ export default function ExamPage({ params }: ExamPageProps) {
           <div className="p-4 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 shrink-0">
             <button
               onClick={() => setShowConfirmModal(true)}
-              className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 transition"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-sm sm:text-base rounded-xl shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2.5 transition active:scale-[0.99]"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
               <span>최종 시험 제출하기 ({answeredCount}/{problems.length} 완료)</span>
             </button>
           </div>
