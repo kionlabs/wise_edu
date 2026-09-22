@@ -171,20 +171,48 @@ export default function ExamPage({ params }: ExamPageProps) {
   const answeredCount = Object.keys(answers).filter(k => Boolean(answers[k])).length;
   const datasetCsvUrl = problems.find(p => p.csv_url)?.csv_url || '/sample_data/customer_data.csv';
 
-  // Table Column mapping for clean rendering
-  const columnDefs = [
-    { name: 'Age', desc: '연령' },
-    { name: 'Attrition', desc: '퇴사 여부 (1: 퇴사, 0: 퇴사하지 않음)' },
-    { name: 'Department', desc: '근무 부서' },
-    { name: 'DistanceFromHome', desc: '집과의 거리' },
-    { name: 'Education', desc: '교육 수준' },
-    { name: 'Gender', desc: '성별' },
-    { name: 'JobInvolvement', desc: '직무 참여도' },
-    { name: 'JobRole', desc: '직무 역할' },
-    { name: 'JobSatisfaction', desc: '직무 만족도' },
-    { name: 'MonthlyRate', desc: '월급' },
-    { name: 'OverTime', desc: '야근 여부' },
-  ];
+  // Dynamic overview parser from exam.overview
+  const parsedOverview = (() => {
+    const text = exam.overview || '';
+    let subject = '';
+    const subjectMatch = text.match(/■\s*주제\s*:\s*([^\n]+)/);
+    if (subjectMatch) {
+      subject = subjectMatch[1].trim();
+    }
+
+    let background = '';
+    const bgMatch = text.match(/■\s*배경\s*:\s*([\s\S]*?)(?=■\s*과제명|\n\n■|$)/);
+    if (bgMatch) {
+      background = bgMatch[1].trim();
+    }
+
+    let task = '';
+    const taskMatch = text.match(/■\s*과제명\s*:\s*([\s\S]*?)(?=■\s*데이터 컬럼명|\n\n■|$)/);
+    if (taskMatch) {
+      task = taskMatch[1].trim();
+    }
+
+    const columns: { name: string; desc: string }[] = [];
+    const colSectionMatch = text.match(/■\s*데이터 컬럼명[^\n]*:\s*([\s\S]*$)/);
+    if (colSectionMatch) {
+      const colLines = colSectionMatch[1].split('\n');
+      colLines.forEach(line => {
+        const match = line.trim().match(/^[-•]?\s*([a-zA-Z0-9_]+)\s*:\s*(.+)$/);
+        if (match) {
+          columns.push({ name: match[1].trim(), desc: match[2].trim() });
+        }
+      });
+    }
+
+    if (!subject) {
+      subject = exam.title.replace(/^AICE Basic (실전 )?(모의고사|연습문제 \d+|연습문제):\s*/, '').trim();
+    }
+    if (!task) {
+      task = exam.description;
+    }
+
+    return { subject, background, task, columns };
+  })();
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] max-w-[1700px] mx-auto pb-6">
@@ -249,7 +277,7 @@ export default function ExamPage({ params }: ExamPageProps) {
                 </h2>
               </div>
               <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
-                과제: 퇴사여부 예측
+                과제: {parsedOverview.subject}
               </span>
             </div>
 
@@ -257,66 +285,70 @@ export default function ExamPage({ params }: ExamPageProps) {
             <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
                 <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 주제</span>
-                <p className="font-bold text-slate-900 text-sm">퇴사여부 예측</p>
+                <p className="font-bold text-slate-900 text-sm">{parsedOverview.subject}</p>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 배경</span>
-                <p className="text-slate-800 leading-relaxed whitespace-pre-line">
-                  최근에는 조직 문화, 업무 강도, 보상 수준 등 다양한 요인으로 인해 직원의 퇴사 가능성을 미리 파악하는 것이 중요해지고 있습니다. 직원의 퇴사는 개인의 만족도뿐만 아니라 근속 기간, 업무 환경, 직무 역할, 성과 등 여러 요인이 복합적으로 작용해 발생하기 때문에 단순한 기준만으로 판단하기 어렵습니다. 만약 과거 직원 데이터를 기반으로 퇴사 가능성을 미리 예측할 수 있다면, 퇴사 위험이 높은 직원을 조기에 파악하고 인사 관리와 조직 운영을 보다 효과적으로 진행할 수 있을 것입니다.
-                  {"\n\n"}
-                  이를 위해 데이터 분석과 머신러닝 모델을 활용하여 직원의 다양한 근무 지표를 종합적으로 고려해 퇴사 여부를 예측하고자 합니다.
-                </p>
-              </div>
+              {parsedOverview.background && (
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 배경</span>
+                  <p className="text-slate-800 leading-relaxed whitespace-pre-line">
+                    {parsedOverview.background}
+                  </p>
+                </div>
+              )}
 
-              <div className="p-4 bg-purple-50/80 rounded-xl border border-purple-200 space-y-1">
-                <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 과제명</span>
-                <p className="font-bold text-purple-950 text-sm">
-                  인사 데이터를 기반으로 직원의 퇴사여부를 예측하는 AI 모델을 구현해보세요.
-                </p>
-              </div>
+              {parsedOverview.task && (
+                <div className="p-4 bg-purple-50/80 rounded-xl border border-purple-200 space-y-1">
+                  <span className="font-extrabold text-purple-900 block text-xs uppercase">■ 과제명</span>
+                  <p className="font-bold text-purple-950 text-sm">
+                    {parsedOverview.task}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Section 2: Data Columns 명세 Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Database className="w-5 h-5 text-emerald-600" />
-              <h3 className="text-base font-extrabold text-slate-900">
-                ■ 데이터 컬럼명 명세 (Data Column Definitions)
-              </h3>
-            </div>
+          {parsedOverview.columns.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Database className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-extrabold text-slate-900">
+                  ■ 데이터 컬럼명 명세 (Data Column Definitions)
+                </h3>
+              </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-900 text-white font-extrabold uppercase text-[11px]">
-                    <th className="py-3 px-4 w-1/3">컬럼명 (Column)</th>
-                    <th className="py-3 px-4">설명 및 범주 (Description)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {columnDefs.map((col, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 transition">
-                      <td className="py-2.5 px-4 font-mono font-bold text-purple-950 bg-purple-50/50">
-                        {col.name}
-                      </td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-800">
-                        {col.desc}
-                      </td>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900 text-white font-extrabold uppercase text-[11px]">
+                      <th className="py-3 px-4 w-1/3">컬럼명 (Column)</th>
+                      <th className="py-3 px-4">설명 및 범주 (Description)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {parsedOverview.columns.map((col, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition">
+                        <td className="py-2.5 px-4 font-mono font-bold text-purple-950 bg-purple-50/50">
+                          {col.name}
+                        </td>
+                        <td className="py-2.5 px-4 font-semibold text-slate-800">
+                          {col.desc}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                위 데이터 컬럼 명세를 참고하여 파이썬 AIDU 또는 Jupyter Notebook에서 실습용 CSV 데이터를 탐색하고 모델을 구축하세요.
-              </span>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  위 데이터 컬럼 명세를 참고하여 파이썬 AIDU 또는 Jupyter Notebook에서 실습용 CSV 데이터를 탐색하고 모델을 구축하세요.
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ============================================================== */}
