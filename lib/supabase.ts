@@ -182,6 +182,7 @@ const MOCK_EXAMS: Exam[] = [
     total_questions: 15,
     pass_score: 80,
     created_at: new Date().toISOString(),
+    csv_url: getStoragePublicUrl('aice-files', 'customer_data.csv'),
     overview: `[AICE Basic 모의고사: 퇴사여부 예측 (문제지)]
 
 ■ 주제: 퇴사여부 예측
@@ -215,6 +216,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
+    csv_url: getStoragePublicUrl('aice-files', 'housing_prices.csv'),
     overview: `[AICE Basic 실전 모의고사: 자동차 가격 예측 (문제지)]
 
 ■ 주제: 자동차 가격 예측
@@ -285,6 +287,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
+    csv_url: getStoragePublicUrl('aice-files', 'wine_quality.csv'),
     overview: `[AICE Basic 연습문제 2: 와인 품질 예측 (문제지)]
 
 ■ 주제: 와인 품질 예측
@@ -320,6 +323,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
+    csv_url: getStoragePublicUrl('aice-files', 'bank_churn.csv'),
     overview: `[AICE Basic 연습문제 3: 은행 고객 이탈 예측 (문제지)]
 
 ■ 주제: 은행 고객 이탈 예측
@@ -356,6 +360,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
+    csv_url: getStoragePublicUrl('aice-files', 'student_scores.csv'),
     overview: `[AICE Basic 연습문제 4: 학생 성적 예측 (문제지)]
 
 ■ 주제: 학생 성적 예측
@@ -1740,11 +1745,17 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
               .then();
           }
         }
-        return {
+        const resultExam: Exam = {
           ...data,
           overview: useOverview || mock?.overview || data.overview,
-          csv_url: data.csv_url || mock?.csv_url
-        } as Exam;
+          csv_url: (data.csv_url && data.csv_url.trim().length > 0 ? data.csv_url.trim() : null) || mock?.csv_url
+        };
+        console.log(`[DEBUG fetchExamById] Loaded exam '${examId}':`, {
+          db_raw_csv_url: data.csv_url,
+          mock_csv_url: mock?.csv_url,
+          final_csv_url: resultExam.csv_url
+        });
+        return resultExam;
       }
     } catch (e) {
       console.warn('Supabase fetchExamById error, using fallback:', e);
@@ -2150,7 +2161,8 @@ async function ensureExamExists(examId: string) {
     total_questions: mock.total_questions,
     pass_score: mock.pass_score,
     is_result_released: mock.is_result_released ?? true,
-    overview: mock.overview || null
+    overview: mock.overview || null,
+    csv_url: mock.csv_url || null
   } : null;
 
   // 1. Explicit schema('aice').from('aice_exams')

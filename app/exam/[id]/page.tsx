@@ -75,6 +75,13 @@ export default function ExamPage({ params }: ExamPageProps) {
     initExam();
   }, [examId, router]);
 
+  // Console debug log for loaded exam.csv_url as requested
+  useEffect(() => {
+    if (exam) {
+      console.log("[DEBUG CSV URL]:", exam?.csv_url);
+    }
+  }, [exam]);
+
   // Countdown Timer
   useEffect(() => {
     if (loading || isSubmitting || timeLeft <= 0) return;
