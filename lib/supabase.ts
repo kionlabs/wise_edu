@@ -2037,63 +2037,49 @@ export async function uploadCsvDataset(file: File): Promise<string> {
   const encodedName = encodeURIComponent(originalFileName);
 
   if (supabase) {
-    try {
-      // 1. 원본 파일 바이너리(ArrayBuffer)를 그대로 생성하여 인코딩 변형/유실(UTF-8, EUC-KR 등) 없이 보장
-      const arrayBuffer = await file.arrayBuffer();
+    // 1순위: 지정된 Supabase Storage 버킷 'aice-files' (필요시 'aice_csv' 보조)
+    const targetBuckets = ['aice-files', 'aice_csv'];
 
-      // 2. 임의 해시/토큰/문자대치 없이 원래 파일명(originalFileName) 그대로 Storage 경로로 업로드
-      const { data, error } = await supabase
-        .storage
-        .from('aice_csv')
-        .upload(originalFileName, arrayBuffer, { 
-          upsert: true,
-          contentType: 'text/csv; charset=utf-8',
-          cacheControl: '3600'
-        });
+    for (const bucketName of targetBuckets) {
+      try {
+        // 원본 바이너리 ArrayBuffer 생성 (텍스트/Base64 인코딩 변환 없이 그대로 업로드)
+        const arrayBuffer = await file.arrayBuffer();
 
-      if (!error && data) {
-        const { data: publicUrlData } = supabase
+        const { data, error } = await supabase
           .storage
-          .from('aice_csv')
-          .getPublicUrl(originalFileName);
-        if (publicUrlData?.publicUrl) {
-          const finalUrl = `${publicUrlData.publicUrl}?filename=${encodedName}`;
-          console.log(`✅ [uploadCsvDataset] 원본 파일명 '${originalFileName}' 그대로 Storage 업로드 성공:`, finalUrl);
-          return finalUrl;
+          .from(bucketName)
+          .upload(originalFileName, arrayBuffer, { 
+            upsert: true,
+            contentType: 'text/csv; charset=utf-8',
+            cacheControl: '3600'
+          });
+
+        if (!error && data) {
+          const { data: publicUrlData } = supabase
+            .storage
+            .from(bucketName)
+            .getPublicUrl(originalFileName);
+
+          if (publicUrlData?.publicUrl) {
+            const finalUrl = `${publicUrlData.publicUrl}?filename=${encodedName}`;
+            console.log(`✅ [uploadCsvDataset] Supabase Storage 버킷 '${bucketName}'에 원본 파일 '${originalFileName}' 업로드 성공:`, finalUrl);
+            return finalUrl;
+          }
+        } else if (error) {
+          console.warn(`⚠️ [uploadCsvDataset Warning] Storage 버킷 '${bucketName}' 업로드 미완료:`, error.message);
         }
-      } else if (error) {
-        console.error(`❌ [uploadCsvDataset Error] Storage 업로드 실패 ('${originalFileName}'):`, error);
+      } catch (e) {
+        console.warn(`⚠️ [uploadCsvDataset Exception] Storage 버킷 '${bucketName}' 업로드 예외:`, e);
       }
-    } catch (e) {
-      console.error(`❌ [uploadCsvDataset Exception] Storage 업로드 예외 ('${originalFileName}'):`, e);
     }
   }
 
-  // Local Data URL / ObjectURL Fallback (해시 파라미터로 원본 파일명 박음)
-  if (typeof window !== 'undefined') {
-    try {
-      const reader = new FileReader();
-      return new Promise<string>((resolve) => {
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(`${reader.result}#filename=${encodedName}`);
-          } else {
-            const objUrl = URL.createObjectURL(file);
-            resolve(`${objUrl}#filename=${encodedName}`);
-          }
-        };
-        reader.onerror = () => {
-          const objUrl = URL.createObjectURL(file);
-          resolve(`${objUrl}#filename=${encodedName}`);
-        };
-        reader.readAsDataURL(file);
-      });
-    } catch {
-      if (typeof window.URL?.createObjectURL === 'function') {
-        return `${URL.createObjectURL(file)}#filename=${encodedName}`;
-      }
-    }
+  // Local ObjectURL Fallback (Data URL 텍스트 변환 대신 원본 바이너리 유지용 ObjectURL 생성)
+  if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
+    const objUrl = URL.createObjectURL(file);
+    return `${objUrl}#filename=${encodedName}`;
   }
+
   return `/sample_data/${originalFileName}?filename=${encodedName}`;
 }
 
