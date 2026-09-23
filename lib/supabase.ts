@@ -22,6 +22,14 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
+export function getStoragePublicUrl(bucket: string = 'aice-files', fileName: string): string {
+  const encoded = encodeURIComponent(fileName);
+  if (supabaseUrl) {
+    return `${supabaseUrl}/storage/v1/object/public/${bucket}/${fileName}?filename=${encoded}`;
+  }
+  return `/sample_data/${fileName}?filename=${encoded}`;
+}
+
 // LocalStorage Helper for Student Session
 const SESSION_KEY = 'aice_student_session';
 
@@ -242,7 +250,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
-    csv_url: '/sample_data/customer_data.csv',
+    csv_url: getStoragePublicUrl('aice-files', 'heart_nan.csv'),
     overview: `[AICE Basic 연습문제: 심장병 예측 (문제지)]
 
 ■ 주제: 심장병 예측

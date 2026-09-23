@@ -116,7 +116,7 @@ export default function AdminPage() {
       setEditExamMsg('');
 
       const existingProbs = await fetchProblemsByExamId(examId);
-      const csv = existingProbs.find(p => p.csv_url)?.csv_url || '';
+      const csv = target.csv_url || existingProbs.find(p => p.csv_url)?.csv_url || '';
       setEditExamCsvUrl(csv);
     }
   };
@@ -468,7 +468,8 @@ export default function AdminPage() {
       overview: editExamOverview.trim() || undefined,
       time_limit_minutes: Number(editExamTimeLimit),
       total_questions: Number(editExamTotalQuestions),
-      pass_score: Number(editExamPassScore)
+      pass_score: Number(editExamPassScore),
+      csv_url: editExamCsvUrl.trim() || undefined
     });
 
     if (editExamCsvUrl.trim()) {
