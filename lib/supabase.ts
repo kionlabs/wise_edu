@@ -15,11 +15,9 @@ export const isSupabaseConfigured = Boolean(
   !supabaseUrl.includes('your-supabase-project')
 );
 
-// Supabase Client 생성시 db: { schema: 'aice' } 옵션 지정
+// Supabase Client 생성 (글로벌 db.schema 설정 대신 개별/폴백 쿼리 조합으로 406 에러 방지)
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      db: { schema: 'aice' }
-    })
+  ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
 export function getStoragePublicUrl(bucket: string = 'aice-files', fileName: string): string {
@@ -1644,36 +1642,45 @@ function saveLocalProblem(examId: string, problem: Problem) {
 export async function fetchExams(): Promise<Exam[]> {
   if (supabase) {
     try {
-      const { data, error } = await supabase
+      let data: any[] | null = null;
+
+      // 1. Attempt aice schema
+      const res1 = await supabase
         .schema('aice')
         .from('aice_exams')
         .select('*')
         .order('created_at', { ascending: true });
-      if (!error && data && data.length > 0) {
+
+      if (!res1.error && res1.data && res1.data.length > 0) {
+        data = res1.data;
+      } else {
+        // 2. Attempt default (public) schema
+        const res2 = await supabase
+          .from('aice_exams')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (!res2.error && res2.data) {
+          data = res2.data;
+        }
+      }
+
+      if (data && data.length > 0) {
         const uniqueMap = new Map<string, Exam>();
         for (const item of data) {
           const mock = MOCK_EXAMS.find(m => m.id === item.id);
           let useOverview = item.overview;
 
-          // If built-in exam or if DB overview has stale/contradictory text (e.g., '퇴사여부' inside Exam 4)
           if (mock) {
-            if (!useOverview || useOverview.length < 50 || useOverview.includes('퇴사여부') && item.id === 'f6666666-6666-6666-6666-666666666666') {
-              useOverview = mock.overview;
-              // Auto-repair DB row in background
-              supabase
-                .schema('aice')
-                .from('aice_exams')
-                .update({ overview: mock.overview, title: mock.title })
-                .eq('id', item.id)
-                .then();
-            } else if (item.id === 'f6666666-6666-6666-6666-666666666666' && useOverview.includes('퇴사여부')) {
+            if (!useOverview || useOverview.length < 50 || (useOverview.includes('퇴사여부') && item.id === 'f6666666-6666-6666-6666-666666666666')) {
               useOverview = mock.overview;
             }
           }
 
+          const rawCsvUrl = item.csv_url && String(item.csv_url).trim().length > 0 ? String(item.csv_url).trim() : null;
           const examObj: Exam = {
             ...item,
-            overview: useOverview || mock?.overview || item.overview
+            overview: useOverview || mock?.overview || item.overview,
+            csv_url: rawCsvUrl || mock?.csv_url
           };
           uniqueMap.set(item.id, examObj);
         }
@@ -1694,24 +1701,38 @@ export async function createExam(examData: Omit<Exam, 'id' | 'created_at'>): Pro
   };
 
   if (supabase) {
+    const payload = {
+      title: examData.title,
+      description: examData.description,
+      time_limit_minutes: examData.time_limit_minutes,
+      total_questions: examData.total_questions,
+      pass_score: examData.pass_score,
+      overview: examData.overview || null,
+      csv_url: examData.csv_url || null
+    };
+
     try {
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_exams')
-        .insert([{
-          title: examData.title,
-          description: examData.description,
-          time_limit_minutes: examData.time_limit_minutes,
-          total_questions: examData.total_questions,
-          pass_score: examData.pass_score,
-          overview: examData.overview || null
-        }])
-        .select()
-        .single();
+        .insert([payload])
+        .select('*')
+        .maybeSingle();
 
       if (!error && data) {
         saveLocalExam(data as Exam);
         return data as Exam;
+      }
+
+      const { data: pubData, error: pubErr } = await supabase
+        .from('aice_exams')
+        .insert([payload])
+        .select('*')
+        .maybeSingle();
+
+      if (!pubErr && pubData) {
+        saveLocalExam(pubData as Exam);
+        return pubData as Exam;
       }
     } catch (e) {
       console.warn('Supabase createExam error, saving locally:', e);
@@ -1725,33 +1746,51 @@ export async function createExam(examData: Omit<Exam, 'id' | 'created_at'>): Pro
 export async function fetchExamById(examId: string): Promise<Exam | null> {
   if (supabase) {
     try {
-      const { data, error } = await supabase
+      let examData: any = null;
+
+      // 1. Attempt aice schema
+      const { data: aiceData, error: aiceError } = await supabase
         .schema('aice')
         .from('aice_exams')
         .select('*')
         .eq('id', examId)
-        .single();
-      if (!error && data) {
-        const mock = MOCK_EXAMS.find(m => m.id === data.id);
-        let useOverview = data.overview;
+        .maybeSingle();
+
+      if (!aiceError && aiceData) {
+        examData = aiceData;
+      } else {
+        // 2. Attempt default (public) schema
+        const { data: publicData, error: publicError } = await supabase
+          .from('aice_exams')
+          .select('*')
+          .eq('id', examId)
+          .maybeSingle();
+
+        if (!publicError && publicData) {
+          examData = publicData;
+        }
+      }
+
+      if (examData) {
+        const mock = MOCK_EXAMS.find(m => m.id === examData.id);
+        let useOverview = examData.overview;
         if (mock) {
-          if (!useOverview || useOverview.includes('퇴사여부') && data.id === 'f6666666-6666-6666-6666-666666666666') {
+          if (!useOverview || (useOverview.includes('퇴사여부') && examData.id === 'f6666666-6666-6666-6666-666666666666')) {
             useOverview = mock.overview;
-            supabase
-              .schema('aice')
-              .from('aice_exams')
-              .update({ overview: mock.overview, title: mock.title })
-              .eq('id', data.id)
-              .then();
           }
         }
+
+        const dbRawCsvUrl = examData.csv_url && String(examData.csv_url).trim().length > 0 ? String(examData.csv_url).trim() : null;
+        const resolvedCsvUrl = dbRawCsvUrl || mock?.csv_url || null;
+
         const resultExam: Exam = {
-          ...data,
-          overview: useOverview || mock?.overview || data.overview,
-          csv_url: (data.csv_url && data.csv_url.trim().length > 0 ? data.csv_url.trim() : null) || mock?.csv_url
+          ...examData,
+          overview: useOverview || mock?.overview || examData.overview,
+          csv_url: resolvedCsvUrl
         };
+
         console.log(`[DEBUG fetchExamById] Loaded exam '${examId}':`, {
-          db_raw_csv_url: data.csv_url,
+          db_raw_csv_url: examData.csv_url,
           mock_csv_url: mock?.csv_url,
           final_csv_url: resultExam.csv_url
         });
@@ -1761,21 +1800,49 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
       console.warn('Supabase fetchExamById error, using fallback:', e);
     }
   }
+
   const allExams = getLocalExams();
-  return allExams.find(e => e.id === examId) || allExams[0];
+  const matched = allExams.find(e => e.id === examId);
+  const mockMatched = MOCK_EXAMS.find(m => m.id === examId);
+
+  if (matched) {
+    return {
+      ...matched,
+      csv_url: (matched.csv_url && matched.csv_url.trim().length > 0 ? matched.csv_url.trim() : null) || mockMatched?.csv_url
+    };
+  }
+
+  if (mockMatched) return mockMatched;
+  return allExams[0] || null;
 }
 
 export async function fetchProblemsByExamId(examId: string): Promise<Problem[]> {
   if (supabase) {
     try {
-      const { data, error } = await supabase
+      let dataList: any[] | null = null;
+
+      const res1 = await supabase
         .schema('aice')
         .from('aice_problems')
         .select('*')
         .eq('exam_id', examId)
         .order('order_num', { ascending: true });
-      if (!error && data && data.length > 0) {
-        return data.map(p => ({
+
+      if (!res1.error && res1.data && res1.data.length > 0) {
+        dataList = res1.data;
+      } else {
+        const res2 = await supabase
+          .from('aice_problems')
+          .select('*')
+          .eq('exam_id', examId)
+          .order('order_num', { ascending: true });
+        if (!res2.error && res2.data) {
+          dataList = res2.data;
+        }
+      }
+
+      if (dataList && dataList.length > 0) {
+        return dataList.map(p => ({
           ...p,
           options: typeof p.options === 'string' ? JSON.parse(p.options) : p.options
         })) as Problem[];
@@ -1794,29 +1861,42 @@ export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<P
   };
 
   if (supabase) {
+    const payload = {
+      exam_id: problemData.exam_id,
+      order_num: problemData.order_num,
+      title: problemData.title,
+      description: problemData.description,
+      category: problemData.category,
+      type: problemData.type,
+      options: problemData.options ? JSON.stringify(problemData.options) : null,
+      answer: problemData.answer,
+      csv_url: problemData.csv_url || null,
+      score: problemData.score,
+      explanation: problemData.explanation
+    };
+
     try {
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_problems')
-        .insert([{
-          exam_id: problemData.exam_id,
-          order_num: problemData.order_num,
-          title: problemData.title,
-          description: problemData.description,
-          category: problemData.category,
-          type: problemData.type,
-          options: problemData.options ? JSON.stringify(problemData.options) : null,
-          answer: problemData.answer,
-          csv_url: problemData.csv_url || null,
-          score: problemData.score,
-          explanation: problemData.explanation
-        }])
-        .select()
-        .single();
+        .insert([payload])
+        .select('*')
+        .maybeSingle();
 
       if (!error && data) {
         saveLocalProblem(problemData.exam_id, data as Problem);
         return data as Problem;
+      }
+
+      const { data: pubData, error: pubErr } = await supabase
+        .from('aice_problems')
+        .insert([payload])
+        .select('*')
+        .maybeSingle();
+
+      if (!pubErr && pubData) {
+        saveLocalProblem(problemData.exam_id, pubData as Problem);
+        return pubData as Problem;
       }
     } catch (e) {
       console.warn('Supabase createProblem error, saving locally:', e);
@@ -1829,31 +1909,47 @@ export async function createProblem(problemData: Omit<Problem, 'id'>): Promise<P
 
 export async function updateProblem(problemId: string, problemData: Partial<Problem>): Promise<Problem | null> {
   if (supabase) {
-    try {
-      const payload: any = {};
-      if (problemData.order_num !== undefined) payload.order_num = problemData.order_num;
-      if (problemData.title !== undefined) payload.title = problemData.title;
-      if (problemData.description !== undefined) payload.description = problemData.description;
-      if (problemData.category !== undefined) payload.category = problemData.category;
-      if (problemData.type !== undefined) payload.type = problemData.type;
-      if (problemData.options !== undefined) payload.options = problemData.options ? JSON.stringify(problemData.options) : null;
-      if (problemData.answer !== undefined) payload.answer = problemData.answer;
-      if (problemData.csv_url !== undefined) payload.csv_url = problemData.csv_url;
-      if (problemData.score !== undefined) payload.score = problemData.score;
-      if (problemData.explanation !== undefined) payload.explanation = problemData.explanation;
+    const payload: any = {};
+    if (problemData.order_num !== undefined) payload.order_num = problemData.order_num;
+    if (problemData.title !== undefined) payload.title = problemData.title;
+    if (problemData.description !== undefined) payload.description = problemData.description;
+    if (problemData.category !== undefined) payload.category = problemData.category;
+    if (problemData.type !== undefined) payload.type = problemData.type;
+    if (problemData.options !== undefined) payload.options = problemData.options ? JSON.stringify(problemData.options) : null;
+    if (problemData.answer !== undefined) payload.answer = problemData.answer;
+    if (problemData.csv_url !== undefined) payload.csv_url = problemData.csv_url;
+    if (problemData.score !== undefined) payload.score = problemData.score;
+    if (problemData.explanation !== undefined) payload.explanation = problemData.explanation;
 
+    try {
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_problems')
         .update(payload)
         .eq('id', problemId)
-        .select()
-        .single();
+        .select('*')
+        .maybeSingle();
 
       if (!error && data) {
         const updated = {
           ...data,
           options: typeof data.options === 'string' ? JSON.parse(data.options) : data.options
+        } as Problem;
+        saveLocalProblem(updated.exam_id, updated);
+        return updated;
+      }
+
+      const { data: pubData, error: pubErr } = await supabase
+        .from('aice_problems')
+        .update(payload)
+        .eq('id', problemId)
+        .select('*')
+        .maybeSingle();
+
+      if (!pubErr && pubData) {
+        const updated = {
+          ...pubData,
+          options: typeof pubData.options === 'string' ? JSON.parse(pubData.options) : pubData.options
         } as Problem;
         saveLocalProblem(updated.exam_id, updated);
         return updated;
@@ -1878,13 +1974,23 @@ export async function updateProblem(problemId: string, problemData: Partial<Prob
 export async function deleteProblem(problemId: string, examId: string): Promise<boolean> {
   if (supabase) {
     try {
-      const { error } = await supabase
+      const { error: err1 } = await supabase
         .schema('aice')
         .from('aice_problems')
         .delete()
         .eq('id', problemId);
 
-      if (!error) {
+      if (!err1) {
+        deleteLocalProblem(examId, problemId);
+        return true;
+      }
+
+      const { error: err2 } = await supabase
+        .from('aice_problems')
+        .delete()
+        .eq('id', problemId);
+
+      if (!err2) {
         deleteLocalProblem(examId, problemId);
         return true;
       }
@@ -1905,27 +2011,40 @@ function deleteLocalProblem(examId: string, problemId: string) {
 
 export async function updateExam(examId: string, examData: Partial<Exam>): Promise<Exam | null> {
   if (supabase) {
-    try {
-      const payload: any = {};
-      if (examData.title !== undefined) payload.title = examData.title;
-      if (examData.description !== undefined) payload.description = examData.description;
-      if (examData.time_limit_minutes !== undefined) payload.time_limit_minutes = examData.time_limit_minutes;
-      if (examData.total_questions !== undefined) payload.total_questions = examData.total_questions;
-      if (examData.pass_score !== undefined) payload.pass_score = examData.pass_score;
-      if (examData.overview !== undefined) payload.overview = examData.overview;
-      if (examData.is_result_released !== undefined) payload.is_result_released = examData.is_result_released;
+    const payload: any = {};
+    if (examData.title !== undefined) payload.title = examData.title;
+    if (examData.description !== undefined) payload.description = examData.description;
+    if (examData.time_limit_minutes !== undefined) payload.time_limit_minutes = examData.time_limit_minutes;
+    if (examData.total_questions !== undefined) payload.total_questions = examData.total_questions;
+    if (examData.pass_score !== undefined) payload.pass_score = examData.pass_score;
+    if (examData.overview !== undefined) payload.overview = examData.overview;
+    if (examData.is_result_released !== undefined) payload.is_result_released = examData.is_result_released;
+    if (examData.csv_url !== undefined) payload.csv_url = examData.csv_url;
 
+    try {
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_exams')
         .update(payload)
         .eq('id', examId)
-        .select()
-        .single();
+        .select('*')
+        .maybeSingle();
 
       if (!error && data) {
         updateLocalExam(examId, data as Exam);
         return data as Exam;
+      }
+
+      const { data: pubData, error: pubErr } = await supabase
+        .from('aice_exams')
+        .update(payload)
+        .eq('id', examId)
+        .select('*')
+        .maybeSingle();
+
+      if (!pubErr && pubData) {
+        updateLocalExam(examId, pubData as Exam);
+        return pubData as Exam;
       }
     } catch (e) {
       console.warn('Supabase updateExam error:', e);
@@ -2479,7 +2598,16 @@ export async function fetchSubmissionsByStudent(school: string, studentId: strin
           .select('*')
           .eq('student_id', cleanStudentId)
           .order('submitted_at', { ascending: false });
-        if (plainData) dataList = plainData;
+        if (plainData) {
+          dataList = plainData;
+        } else {
+          const { data: pubData } = await supabase
+            .from('aice_submissions')
+            .select('*')
+            .eq('student_id', cleanStudentId)
+            .order('submitted_at', { ascending: false });
+          if (pubData) dataList = pubData;
+        }
       }
 
       if (dataList) {
@@ -2531,8 +2659,12 @@ export async function fetchAllSubmissions(): Promise<Submission[]> {
 
         if (!plainError && plainData) {
           dataList = plainData;
-        } else if (plainError) {
-          console.warn('Supabase fetchAllSubmissions plain error:', plainError);
+        } else {
+          const { data: pubData } = await supabase
+            .from('aice_submissions')
+            .select('*')
+            .order('submitted_at', { ascending: false });
+          if (pubData) dataList = pubData;
         }
       }
 
