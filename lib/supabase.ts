@@ -242,6 +242,7 @@ const MOCK_EXAMS: Exam[] = [
     pass_score: 80,
     created_at: new Date().toISOString(),
     is_result_released: false,
+    csv_url: '/sample_data/customer_data.csv',
     overview: `[AICE Basic 연습문제: 심장병 예측 (문제지)]
 
 ■ 주제: 심장병 예측

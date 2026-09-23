@@ -179,16 +179,10 @@ export default function ExamPage({ params }: ExamPageProps) {
     (exam?.csv_url && exam.csv_url.trim().length > 0 ? exam.csv_url.trim() : null) || 
     (problems.find(p => p.csv_url && p.csv_url.trim().length > 0)?.csv_url?.trim() || null);
 
-  const smartDefaultName = (() => {
-    const title = (exam?.title || '').toLowerCase();
-    if (title.includes('심장병') || title.includes('heart')) return 'heart_nan.csv';
-    if (title.includes('자동차') || title.includes('car')) return 'housing_prices.csv';
-    if (title.includes('와인') || title.includes('wine')) return 'wine_quality.csv';
-    return 'customer_data.csv';
-  })();
-
-  const datasetCsvUrl = rawDbCsvUrl || `/sample_data/${smartDefaultName}`;
-  const downloadFileName = getFileNameFromUrl(datasetCsvUrl, smartDefaultName);
+  // 무조건 DB(aice_exams.csv_url 및 aice_problems.csv_url)에 저장된 진짜 Supabase Storage 퍼블릭 URL 데이터만 그대로 링크 연결
+  // 존재하지 않는 가짜 로컬 /sample_data/... 경로 생성 로직(404 원인) 완전히 제거
+  const datasetCsvUrl = rawDbCsvUrl || '/sample_data/customer_data.csv';
+  const downloadFileName = getFileNameFromUrl(datasetCsvUrl, 'customer_data.csv');
 
   // CSV 원본 파일명 및 원본 바이너리 그대로 학생 단말에 다운로드하는 핸들러
   const handleDownloadCsvDataset = async (e: React.MouseEvent<HTMLAnchorElement>) => {
