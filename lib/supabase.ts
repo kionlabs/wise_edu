@@ -1998,33 +1998,77 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
   return { count: formattedProblems.length };
 }
 
+export function getFileNameFromUrl(url?: string, defaultName: string = 'dataset.csv'): string {
+  if (!url || !url.trim()) return defaultName;
+  if (url.startsWith('data:')) return defaultName;
+  try {
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    const rawFileName = cleanUrl.split('/').pop();
+    if (!rawFileName || rawFileName.includes(':')) return defaultName;
+    const decoded = decodeURIComponent(rawFileName);
+    return decoded || defaultName;
+  } catch {
+    return defaultName;
+  }
+}
+
 export async function uploadCsvDataset(file: File): Promise<string> {
+  const originalFileName = file.name;
+
   if (supabase) {
     try {
-      const fileName = `dataset_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      // 1. 원본 파일 바이너리(ArrayBuffer)를 그대로 생성하여 인코딩 변형/유실(UTF-8, EUC-KR 등) 없이 보장
+      const arrayBuffer = await file.arrayBuffer();
+
+      // 2. 임의 해시/토큰/문자대치 없이 원래 파일명(originalFileName) 그대로 Storage 경로로 업로드
       const { data, error } = await supabase
         .storage
         .from('aice_csv')
-        .upload(fileName, file, { upsert: true });
+        .upload(originalFileName, arrayBuffer, { 
+          upsert: true,
+          contentType: 'text/csv; charset=utf-8',
+          cacheControl: '3600'
+        });
 
       if (!error && data) {
         const { data: publicUrlData } = supabase
           .storage
           .from('aice_csv')
-          .getPublicUrl(fileName);
+          .getPublicUrl(originalFileName);
         if (publicUrlData?.publicUrl) {
+          console.log(`✅ [uploadCsvDataset] 원본 파일명 '${originalFileName}' 그대로 Storage 업로드 성공:`, publicUrlData.publicUrl);
           return publicUrlData.publicUrl;
         }
+      } else if (error) {
+        console.error(`❌ [uploadCsvDataset Error] Storage 업로드 실패 ('${originalFileName}'):`, error);
       }
     } catch (e) {
-      console.warn('Supabase storage upload error, using local fallback:', e);
+      console.error(`❌ [uploadCsvDataset Exception] Storage 업로드 예외 ('${originalFileName}'):`, e);
     }
   }
 
-  if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
-    return URL.createObjectURL(file);
+  // Local Data URL / ObjectURL Fallback
+  if (typeof window !== 'undefined') {
+    try {
+      const reader = new FileReader();
+      return new Promise<string>((resolve) => {
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result);
+          } else {
+            resolve(URL.createObjectURL(file));
+          }
+        };
+        reader.onerror = () => resolve(URL.createObjectURL(file));
+        reader.readAsDataURL(file);
+      });
+    } catch {
+      if (typeof window.URL?.createObjectURL === 'function') {
+        return URL.createObjectURL(file);
+      }
+    }
   }
-  return `/sample_data/${file.name}`;
+  return `/sample_data/${originalFileName}`;
 }
 
 export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<boolean> {

@@ -8,7 +8,8 @@ import {
   fetchProblemsByExamId, 
   saveSubmission,
   SaveSubmissionResult,
-  checkAnswerCorrect 
+  checkAnswerCorrect,
+  getFileNameFromUrl
 } from '@/lib/supabase';
 import { StudentSession, Exam, Problem } from '@/types/database';
 import { 
@@ -174,6 +175,36 @@ export default function ExamPage({ params }: ExamPageProps) {
 
   const answeredCount = Object.keys(answers).filter(k => Boolean(answers[k])).length;
   const datasetCsvUrl = problems.find(p => p.csv_url)?.csv_url || '/sample_data/customer_data.csv';
+  const downloadFileName = getFileNameFromUrl(datasetCsvUrl, 'customer_data.csv');
+
+  // CSV 원본 파일명 및 원본 바이너리 그대로 학생 단말에 다운로드하는 핸들러
+  const handleDownloadCsvDataset = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!datasetCsvUrl) return;
+
+    // 상대 경로 또는 data/blob URL인 경우 기본 브라우저 동작 허용
+    if (datasetCsvUrl.startsWith('/') || datasetCsvUrl.startsWith('data:') || datasetCsvUrl.startsWith('blob:')) {
+      return;
+    }
+
+    // 원격 Supabase Storage URL일 경우 fetch blob을 통해 원본 파일명 유지 및 데이터 유실/깨짐 방지
+    e.preventDefault();
+    try {
+      const response = await fetch(datasetCsvUrl);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+      tempLink.href = blobUrl;
+      tempLink.download = downloadFileName;
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.warn('Direct blob download failed, falling back to window.open:', err);
+      window.open(datasetCsvUrl, '_blank');
+    }
+  };
 
   // Dynamic overview parser from exam.overview
   const parsedOverview = (() => {
@@ -245,11 +276,13 @@ export default function ExamPage({ params }: ExamPageProps) {
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           <a
             href={datasetCsvUrl}
-            download
+            download={downloadFileName}
+            onClick={handleDownloadCsvDataset}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition animate-pulse"
+            title={`실습용 CSV 데이터셋 다운로드 (${downloadFileName})`}
           >
             <Download className="w-4 h-4" />
-            <span>실습용 CSV 데이터셋 다운로드</span>
+            <span>실습용 CSV 데이터셋 다운로드 ({downloadFileName})</span>
           </a>
 
           <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg sm:text-xl font-black tracking-wider shadow-inner ${
