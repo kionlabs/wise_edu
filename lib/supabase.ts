@@ -2000,7 +2000,27 @@ export async function bulkCreateProblems(examId: string, rawList: any[]): Promis
 
 export function getFileNameFromUrl(url?: string, defaultName: string = 'dataset.csv'): string {
   if (!url || !url.trim()) return defaultName;
-  if (url.startsWith('data:')) return defaultName;
+
+  // 1. URL 파라미터나 해시(#filename= 또는 ?filename=)에 명시된 원본 파일명 추출
+  try {
+    const fnMatch = url.match(/[?&#]filename=([^&#]+)/);
+    if (fnMatch && fnMatch[1]) {
+      return decodeURIComponent(fnMatch[1]);
+    }
+  } catch {
+    // ignore regexp exception
+  }
+
+  // 2. data: URI name= 속성 추출 (예: data:text/csv;name=heart_nan.csv;base64,...)
+  if (url.startsWith('data:')) {
+    const nameMatch = url.match(/name=([^;]+)/);
+    if (nameMatch && nameMatch[1]) {
+      return decodeURIComponent(nameMatch[1]);
+    }
+    return defaultName;
+  }
+
+  // 3. 일반 HTTP URL 경로에서 파일명 추출 (예: .../aice_csv/heart_nan.csv)
   try {
     const cleanUrl = url.split('?')[0].split('#')[0];
     const rawFileName = cleanUrl.split('/').pop();
@@ -2014,6 +2034,7 @@ export function getFileNameFromUrl(url?: string, defaultName: string = 'dataset.
 
 export async function uploadCsvDataset(file: File): Promise<string> {
   const originalFileName = file.name;
+  const encodedName = encodeURIComponent(originalFileName);
 
   if (supabase) {
     try {
@@ -2036,8 +2057,9 @@ export async function uploadCsvDataset(file: File): Promise<string> {
           .from('aice_csv')
           .getPublicUrl(originalFileName);
         if (publicUrlData?.publicUrl) {
-          console.log(`✅ [uploadCsvDataset] 원본 파일명 '${originalFileName}' 그대로 Storage 업로드 성공:`, publicUrlData.publicUrl);
-          return publicUrlData.publicUrl;
+          const finalUrl = `${publicUrlData.publicUrl}?filename=${encodedName}`;
+          console.log(`✅ [uploadCsvDataset] 원본 파일명 '${originalFileName}' 그대로 Storage 업로드 성공:`, finalUrl);
+          return finalUrl;
         }
       } else if (error) {
         console.error(`❌ [uploadCsvDataset Error] Storage 업로드 실패 ('${originalFileName}'):`, error);
@@ -2047,28 +2069,32 @@ export async function uploadCsvDataset(file: File): Promise<string> {
     }
   }
 
-  // Local Data URL / ObjectURL Fallback
+  // Local Data URL / ObjectURL Fallback (해시 파라미터로 원본 파일명 박음)
   if (typeof window !== 'undefined') {
     try {
       const reader = new FileReader();
       return new Promise<string>((resolve) => {
         reader.onload = () => {
           if (typeof reader.result === 'string') {
-            resolve(reader.result);
+            resolve(`${reader.result}#filename=${encodedName}`);
           } else {
-            resolve(URL.createObjectURL(file));
+            const objUrl = URL.createObjectURL(file);
+            resolve(`${objUrl}#filename=${encodedName}`);
           }
         };
-        reader.onerror = () => resolve(URL.createObjectURL(file));
+        reader.onerror = () => {
+          const objUrl = URL.createObjectURL(file);
+          resolve(`${objUrl}#filename=${encodedName}`);
+        };
         reader.readAsDataURL(file);
       });
     } catch {
       if (typeof window.URL?.createObjectURL === 'function') {
-        return URL.createObjectURL(file);
+        return `${URL.createObjectURL(file)}#filename=${encodedName}`;
       }
     }
   }
-  return `/sample_data/${originalFileName}`;
+  return `/sample_data/${originalFileName}?filename=${encodedName}`;
 }
 
 export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<boolean> {
