@@ -17,7 +17,9 @@ import {
   checkAnswerCorrect,
   syncLocalSubmissionsToSupabase,
   saveSubmission,
-  MOCK_STUDENTS
+  MOCK_STUDENTS,
+  diagnoseSupabaseConnection,
+  SupabaseDiagnosticResult
 } from '@/lib/supabase';
 import { Submission, Exam, Problem } from '@/types/database';
 import { 
@@ -342,6 +344,19 @@ export default function AdminPage() {
     } finally {
       setIsSyncingSubmissions(false);
     }
+  };
+
+  // DB Diagnostics State & Handler
+  const [diagnosticModalOpen, setDiagnosticModalOpen] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<SupabaseDiagnosticResult | null>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+
+  const handleRunDiagnostics = async () => {
+    setIsDiagnosing(true);
+    setDiagnosticModalOpen(true);
+    const result = await diagnoseSupabaseConnection();
+    setDiagnosticResult(result);
+    setIsDiagnosing(false);
   };
 
   // Fetch Admin Data
@@ -1171,6 +1186,16 @@ export default function AdminPage() {
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isSyncingSubmissions ? 'animate-spin' : ''}`} />
                   <span>{isSyncingSubmissions ? '동기화 중...' : 'DB 새로고침'}</span>
+                </button>
+
+                <button
+                  onClick={handleRunDiagnostics}
+                  disabled={isDiagnosing}
+                  className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 shadow-2xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                  title="Supabase DB 연결 상태 및 RLS 권한 실시간 검증"
+                >
+                  <ShieldCheck className={`w-3.5 h-3.5 text-indigo-600 ${isDiagnosing ? 'animate-spin' : ''}`} />
+                  <span>{isDiagnosing ? '진단 중...' : '🔍 DB & RLS 진단'}</span>
                 </button>
 
                 <button
@@ -2665,6 +2690,177 @@ export default function AdminPage() {
                 className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
               >
                 닫기 (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supabase Connection & RLS Diagnostic Modal */}
+      {diagnosticModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-8 space-y-0">
+            {/* Modal Header */}
+            <div className="bg-slate-900 p-6 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold tracking-tight">Supabase DB 연결 & RLS 권한 실시간 진단</h3>
+                  <p className="text-xs text-slate-400">학생 답안 제출 저장이 정상 동작하는지 테스트합니다.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDiagnosticModalOpen(false)}
+                className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto text-xs">
+              {isDiagnosing || !diagnosticResult ? (
+                <div className="py-12 text-center text-slate-500 space-y-3">
+                  <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="font-bold">Supabase 스키마(`aice`) 및 테이블 권한을 진단 중입니다...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Status Summary Banner */}
+                  <div className={`p-4 rounded-2xl border flex items-start gap-3 ${
+                    diagnosticResult.configured && diagnosticResult.schemaAccess.aiceSubmissions.success
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                      : 'bg-amber-50 border-amber-200 text-amber-950'
+                  }`}>
+                    {diagnosticResult.configured && diagnosticResult.schemaAccess.aiceSubmissions.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <h4 className="font-black text-sm">
+                        {diagnosticResult.configured && diagnosticResult.schemaAccess.aiceSubmissions.success
+                          ? '✅ Supabase 연결 및 aice.aice_submissions 테이블 접근 정상!'
+                          : '⚠️ Supabase 설정 또는 RLS 테이블 권한 점검 필요'}
+                      </h4>
+                      <p className="mt-1 leading-relaxed text-slate-700">
+                        {diagnosticResult.configured && diagnosticResult.schemaAccess.aiceSubmissions.success
+                          ? '학생들이 답안 제출 시 Supabase aice.aice_submissions 테이블에 문제없이 직접 저장됩니다.'
+                          : '아래 진단 항목 및 SQL 해결 스크립트를 참조하여 Supabase 대시보드에서 권한을 설정해 주세요.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Environment Config Info */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                    <span className="font-extrabold text-slate-800 uppercase block text-[11px]">1. Supabase Client 환경 변수 검증</span>
+                    <div className="grid grid-cols-2 gap-2 text-slate-700">
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Project URL:</span>
+                        <strong className="font-mono text-slate-900">{diagnosticResult.supabaseUrl}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Anon Key:</span>
+                        <strong className={diagnosticResult.hasAnonKey ? 'text-emerald-700' : 'text-rose-700'}>
+                          {diagnosticResult.hasAnonKey ? '✅ 설정 완료 (Present)' : '❌ 미설정 (Missing)'}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schema Table Access Checks */}
+                  <div className="space-y-3">
+                    <span className="font-extrabold text-slate-800 uppercase block text-[11px]">2. `aice` 스키마 테이블별 READ / SELECT 테스트</span>
+
+                    {/* aice_submissions */}
+                    <div className="p-3 bg-white border rounded-xl flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <strong className="font-mono font-bold text-slate-900">aice.aice_submissions</strong>
+                          <span className="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-1.5 py-0.5 rounded">핵심 답안 테이블</span>
+                        </div>
+                        {diagnosticResult.schemaAccess.aiceSubmissions.error && (
+                          <p className="text-rose-600 font-mono text-[11px] mt-1">{diagnosticResult.schemaAccess.aiceSubmissions.error}</p>
+                        )}
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                        diagnosticResult.schemaAccess.aiceSubmissions.success
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-rose-100 text-rose-800'
+                      }`}>
+                        {diagnosticResult.schemaAccess.aiceSubmissions.success
+                          ? `✅ 정상 (${diagnosticResult.schemaAccess.aiceSubmissions.count}건)`
+                          : '❌ 접근 실패'}
+                      </span>
+                    </div>
+
+                    {/* aice_exams */}
+                    <div className="p-3 bg-white border rounded-xl flex items-center justify-between">
+                      <div>
+                        <strong className="font-mono font-bold text-slate-900">aice.aice_exams</strong>
+                        {diagnosticResult.schemaAccess.aiceExams.error && (
+                          <p className="text-rose-600 font-mono text-[11px] mt-1">{diagnosticResult.schemaAccess.aiceExams.error}</p>
+                        )}
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                        diagnosticResult.schemaAccess.aiceExams.success
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-rose-100 text-rose-800'
+                      }`}>
+                        {diagnosticResult.schemaAccess.aiceExams.success
+                          ? `✅ 정상 (${diagnosticResult.schemaAccess.aiceExams.count}건)`
+                          : '❌ 접근 실패'}
+                      </span>
+                    </div>
+
+                    {/* aice_students */}
+                    <div className="p-3 bg-white border rounded-xl flex items-center justify-between">
+                      <div>
+                        <strong className="font-mono font-bold text-slate-900">aice.aice_students</strong>
+                        {diagnosticResult.schemaAccess.aiceStudents.error && (
+                          <p className="text-rose-600 font-mono text-[11px] mt-1">{diagnosticResult.schemaAccess.aiceStudents.error}</p>
+                        )}
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                        diagnosticResult.schemaAccess.aiceStudents.success
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-rose-100 text-rose-800'
+                      }`}>
+                        {diagnosticResult.schemaAccess.aiceStudents.success
+                          ? `✅ 정상 (${diagnosticResult.schemaAccess.aiceStudents.count}건)`
+                          : '❌ 접근 실패'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* SQL Guidance Box */}
+                  {diagnosticResult.sqlGuidance.length > 0 && (
+                    <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl space-y-2">
+                      <span className="font-extrabold text-amber-400 block text-[11px]">
+                        🛠️ Supabase SQL Editor 조치 안내 (RLS 및 권한 허용 쿼리)
+                      </span>
+                      <p className="text-slate-400 leading-relaxed text-[11px]">
+                        Supabase Dashboard {'>'} SQL Editor에서 아래 쿼리를 복사하여 실행하시면 익명/학생 사용자 권한 오류가 해결됩니다:
+                      </p>
+                      <pre className="p-3 bg-slate-950 rounded-xl text-emerald-400 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap">
+                        {diagnosticResult.sqlGuidance.join('\n')}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setDiagnosticModalOpen(false)}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
+              >
+                닫기
               </button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import {
   fetchExamById, 
   fetchProblemsByExamId, 
   saveSubmission,
+  SaveSubmissionResult,
   checkAnswerCorrect 
 } from '@/lib/supabase';
 import { StudentSession, Exam, Problem } from '@/types/database';
@@ -44,6 +45,7 @@ export default function ExamPage({ params }: ExamPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSubmittedBlindModal, setIsSubmittedBlindModal] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SaveSubmissionResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Auth & Data Initialization
@@ -133,6 +135,8 @@ export default function ExamPage({ params }: ExamPageProps) {
       total_score: maxTotalScore,
       pass_status: passStatus
     });
+
+    setSubmissionResult(savedSub);
 
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('latest_submission', JSON.stringify({
@@ -571,10 +575,32 @@ export default function ExamPage({ params }: ExamPageProps) {
                 답안 제출이 완료되었습니다! 🎉
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium pt-2">
-                제출하신 답안이 데이터베이스에 안전하게 등록되었습니다.<br />
                 <span className="font-extrabold text-purple-700">강사님의 해설 강의 후 채점 결과가 공개</span>되면 대시보드에서 본인의 성적과 문항별 정답/해설을 확인하실 수 있습니다.
               </p>
             </div>
+
+            {/* Explicit DB Status / Diagnostic Banner */}
+            {submissionResult && (
+              <div className="text-left text-xs">
+                {submissionResult._dbSaved ? (
+                  <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>중앙 DB (Supabase: {submissionResult._targetSchema}) 저장 완료</span>
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-amber-50 text-amber-900 border border-amber-300 rounded-xl space-y-1">
+                    <div className="flex items-center gap-2 font-bold text-amber-950">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>⚠️ 중앙 DB 저장 알림 (로컬 저장소 보존)</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      답안은 수험생 PC 브라우저에 보존되었습니다.<br />
+                      중앙 DB 전송 오류: <code className="bg-amber-100 px-1 font-mono text-amber-950">{submissionResult._dbError}</code>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               onClick={() => router.push('/dashboard')}

@@ -2045,81 +2045,202 @@ export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<
 
 async function ensureExamExists(examId: string) {
   if (!supabase) return;
+  const mock = MOCK_EXAMS.find(m => m.id === examId);
+  const payload = mock ? {
+    id: mock.id,
+    title: mock.title,
+    description: mock.description,
+    time_limit_minutes: mock.time_limit_minutes,
+    total_questions: mock.total_questions,
+    pass_score: mock.pass_score,
+    is_result_released: mock.is_result_released ?? true,
+    overview: mock.overview || null
+  } : null;
+
+  // 1. Explicit schema('aice').from('aice_exams')
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .schema('aice')
       .from('aice_exams')
       .select('id')
       .eq('id', examId)
       .maybeSingle();
 
-    if (!data) {
-      const mock = MOCK_EXAMS.find(m => m.id === examId);
-      if (mock) {
-        await supabase
-          .schema('aice')
-          .from('aice_exams')
-          .upsert([{
-            id: mock.id,
-            title: mock.title,
-            description: mock.description,
-            time_limit_minutes: mock.time_limit_minutes,
-            total_questions: mock.total_questions,
-            pass_score: mock.pass_score,
-            is_result_released: mock.is_result_released ?? true,
-            overview: mock.overview || null
-          }], { onConflict: 'id' });
+    if (!error && data) return;
+
+    if (!data && payload) {
+      const { error: upsertErr } = await supabase
+        .schema('aice')
+        .from('aice_exams')
+        .upsert([payload], { onConflict: 'id' });
+      if (!upsertErr) {
+        console.log('✅ [ensureExamExists] Inserted missing exam record to aice.aice_exams:', examId);
+        return;
+      } else {
+        console.warn('⚠️ [ensureExamExists] Upsert error to aice.aice_exams:', upsertErr);
       }
     }
   } catch (e) {
-    console.warn('ensureExamExists warning:', e);
+    console.warn('⚠️ [ensureExamExists] Exception checking aice.aice_exams:', e);
+  }
+
+  // 2. Fallback default schema from('aice_exams')
+  try {
+    const { data } = await supabase
+      .from('aice_exams')
+      .select('id')
+      .eq('id', examId)
+      .maybeSingle();
+
+    if (!data && payload) {
+      await supabase
+        .from('aice_exams')
+        .upsert([payload], { onConflict: 'id' });
+      console.log('✅ [ensureExamExists] Inserted missing exam record to default schema aice_exams:', examId);
+    }
+  } catch (e) {
+    console.warn('⚠️ [ensureExamExists] Exception checking default schema aice_exams:', e);
   }
 }
 
-export async function saveSubmission(submission: Omit<Submission, 'id' | 'submitted_at'>): Promise<Submission> {
+export interface SaveSubmissionResult extends Submission {
+  _dbSaved?: boolean;
+  _dbError?: string;
+  _targetSchema?: string;
+}
+
+export async function saveSubmission(
+  submission: Omit<Submission, 'id' | 'submitted_at'>
+): Promise<SaveSubmissionResult> {
   const newSubmission: Submission = {
     ...submission,
     id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     submitted_at: new Date().toISOString()
   };
 
-  if (supabase) {
-    try {
-      // 1. Ensure foreign key exam record exists in Supabase DB
-      await ensureExamExists(submission.exam_id);
+  let dbSaved = false;
+  let dbError: string | undefined;
+  let targetSchema: string | undefined;
 
-      // 2. Insert submission with explicit ID and submitted_at timestamp
+  if (supabase) {
+    const payload = {
+      id: newSubmission.id,
+      exam_id: submission.exam_id,
+      school: submission.school,
+      student_id: submission.student_id,
+      student_name: submission.student_name,
+      answers: submission.answers,
+      score: submission.score,
+      total_score: submission.total_score,
+      pass_status: submission.pass_status,
+      submitted_at: newSubmission.submitted_at
+    };
+
+    // 1. Ensure foreign key exam record exists
+    await ensureExamExists(submission.exam_id);
+
+    // Attempt 1: Explicit schema('aice').from('aice_submissions')
+    try {
+      console.log('🔄 [Supabase DB Save Attempt 1] Target: aice.aice_submissions');
       const { data, error } = await supabase
         .schema('aice')
         .from('aice_submissions')
-        .insert([{
-          id: newSubmission.id,
-          exam_id: submission.exam_id,
-          school: submission.school,
-          student_id: submission.student_id,
-          student_name: submission.student_name,
-          answers: submission.answers,
-          score: submission.score,
-          total_score: submission.total_score,
-          pass_status: submission.pass_status,
-          submitted_at: newSubmission.submitted_at
-        }])
+        .insert([payload])
         .select()
         .single();
 
       if (!error && data) {
-        saveLocalSubmission(data as Submission);
-        return data as Submission;
+        dbSaved = true;
+        targetSchema = 'aice.aice_submissions';
+        console.log('✅ [Supabase DB Save Success] Saved to aice.aice_submissions:', data.id);
+        const resObj: SaveSubmissionResult = { ...data, _dbSaved: true, _targetSchema: targetSchema };
+        saveLocalSubmission(resObj);
+        return resObj;
       } else if (error) {
-        console.warn('Supabase saveSubmission insert error:', error);
+        console.error('❌ [Supabase DB Save Error - Attempt 1 (aice.aice_submissions)]', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        dbError = `[Attempt 1: aice.aice_submissions] Code ${error.code}: ${error.message}${error.details ? ` (${error.details})` : ''}`;
       }
-    } catch (e) {
-      console.warn('Supabase saveSubmission exception:', e);
+    } catch (e: any) {
+      console.error('❌ [Supabase DB Exception - Attempt 1]', e);
+      dbError = `[Attempt 1 Exception] ${e?.message || String(e)}`;
     }
+
+    // Attempt 2: Default client schema from('aice_submissions')
+    try {
+      console.log('🔄 [Supabase DB Save Attempt 2] Target: default schema aice_submissions');
+      const { data, error } = await supabase
+        .from('aice_submissions')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (!error && data) {
+        dbSaved = true;
+        targetSchema = 'default.aice_submissions';
+        console.log('✅ [Supabase DB Save Success] Saved to default.aice_submissions:', data.id);
+        const resObj: SaveSubmissionResult = { ...data, _dbSaved: true, _targetSchema: targetSchema };
+        saveLocalSubmission(resObj);
+        return resObj;
+      } else if (error) {
+        console.error('❌ [Supabase DB Save Error - Attempt 2 (default.aice_submissions)]', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        if (!dbError) dbError = `[Attempt 2: default.aice_submissions] Code ${error.code}: ${error.message}`;
+      }
+    } catch (e: any) {
+      console.error('❌ [Supabase DB Exception - Attempt 2]', e);
+    }
+
+    // Attempt 3: Public schema alternative from('submissions')
+    try {
+      console.log('🔄 [Supabase DB Save Attempt 3] Target: public.submissions');
+      const { data, error } = await supabase
+        .from('submissions')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (!error && data) {
+        dbSaved = true;
+        targetSchema = 'public.submissions';
+        console.log('✅ [Supabase DB Save Success] Saved to public.submissions:', data.id);
+        const resObj: SaveSubmissionResult = { ...data, _dbSaved: true, _targetSchema: targetSchema };
+        saveLocalSubmission(resObj);
+        return resObj;
+      } else if (error) {
+        console.error('❌ [Supabase DB Save Error - Attempt 3 (public.submissions)]', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      }
+    } catch (e: any) {
+      console.error('❌ [Supabase DB Exception - Attempt 3]', e);
+    }
+  } else {
+    dbError = 'Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing or not set.';
+    console.warn('⚠️ Supabase client is not configured.', dbError);
   }
 
-  saveLocalSubmission(newSubmission);
-  return newSubmission;
+  // Local Storage Fallback with diagnostic metadata attached
+  const resObj: SaveSubmissionResult = {
+    ...newSubmission,
+    _dbSaved: false,
+    _dbError: dbError || 'Failed to insert into Supabase DB (check Console for code & permissions)',
+    _targetSchema: 'localStorage fallback'
+  };
+
+  saveLocalSubmission(resObj);
+  return resObj;
 }
 
 export async function syncLocalSubmissionsToSupabase(): Promise<number> {
@@ -2131,24 +2252,39 @@ export async function syncLocalSubmissionsToSupabase(): Promise<number> {
   for (const sub of localSubs) {
     try {
       await ensureExamExists(sub.exam_id);
-      const { error } = await supabase
+      const payload = {
+        id: sub.id,
+        exam_id: sub.exam_id,
+        school: sub.school,
+        student_id: sub.student_id,
+        student_name: sub.student_name,
+        answers: sub.answers,
+        score: sub.score,
+        total_score: sub.total_score,
+        pass_status: sub.pass_status,
+        submitted_at: sub.submitted_at
+      };
+
+      // 1. Try aice.aice_submissions
+      const { error: err1 } = await supabase
         .schema('aice')
         .from('aice_submissions')
-        .upsert([{
-          id: sub.id,
-          exam_id: sub.exam_id,
-          school: sub.school,
-          student_id: sub.student_id,
-          student_name: sub.student_name,
-          answers: sub.answers,
-          score: sub.score,
-          total_score: sub.total_score,
-          pass_status: sub.pass_status,
-          submitted_at: sub.submitted_at
-        }], { onConflict: 'id' });
+        .upsert([payload], { onConflict: 'id' });
 
-      if (!error) {
+      if (!err1) {
         syncedCount++;
+        continue;
+      }
+
+      // 2. Try default schema aice_submissions
+      const { error: err2 } = await supabase
+        .from('aice_submissions')
+        .upsert([payload], { onConflict: 'id' });
+
+      if (!err2) {
+        syncedCount++;
+      } else {
+        console.warn(`Sync local submission ${sub.id} failed:`, err1 || err2);
       }
     } catch (e) {
       console.warn('Sync local submission exception:', e);
@@ -2355,4 +2491,110 @@ export function checkAnswerCorrect(userAnsRaw?: string, correctAnsRaw?: string, 
   if (u.startsWith(c) || c.startsWith(u)) return true;
 
   return false;
+}
+
+export interface SupabaseDiagnosticResult {
+  configured: boolean;
+  supabaseUrl: string;
+  hasAnonKey: boolean;
+  schemaAccess: {
+    aiceSubmissions: { success: boolean; error?: string; count?: number };
+    aiceExams: { success: boolean; error?: string; count?: number };
+    aiceStudents: { success: boolean; error?: string; count?: number };
+  };
+  sqlGuidance: string[];
+}
+
+export async function diagnoseSupabaseConnection(): Promise<SupabaseDiagnosticResult> {
+  const result: SupabaseDiagnosticResult = {
+    configured: isSupabaseConfigured,
+    supabaseUrl: supabaseUrl || '미설정',
+    hasAnonKey: Boolean(supabaseAnonKey),
+    schemaAccess: {
+      aiceSubmissions: { success: false },
+      aiceExams: { success: false },
+      aiceStudents: { success: false }
+    },
+    sqlGuidance: []
+  };
+
+  if (!supabase) {
+    result.sqlGuidance.push('NEXT_PUBLIC_SUPABASE_URL 및 NEXT_PUBLIC_SUPABASE_ANON_KEY 환경 변수가 Vercel 또는 프로젝트 환경 변수에 설정되어 있지 않습니다.');
+    return result;
+  }
+
+  // Test 1: aice.aice_submissions SELECT check
+  try {
+    const { error, count } = await supabase
+      .schema('aice')
+      .from('aice_submissions')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error) {
+      result.schemaAccess.aiceSubmissions = { success: true, count: count ?? 0 };
+    } else {
+      result.schemaAccess.aiceSubmissions = {
+        success: false,
+        error: `[${error.code}] ${error.message}${error.details ? ` (${error.details})` : ''}${error.hint ? ` - Hint: ${error.hint}` : ''}`
+      };
+    }
+  } catch (e: any) {
+    result.schemaAccess.aiceSubmissions = { success: false, error: e?.message || String(e) };
+  }
+
+  // Test 2: aice.aice_exams SELECT check
+  try {
+    const { error, count } = await supabase
+      .schema('aice')
+      .from('aice_exams')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error) {
+      result.schemaAccess.aiceExams = { success: true, count: count ?? 0 };
+    } else {
+      result.schemaAccess.aiceExams = {
+        success: false,
+        error: `[${error.code}] ${error.message}`
+      };
+    }
+  } catch (e: any) {
+    result.schemaAccess.aiceExams = { success: false, error: e?.message || String(e) };
+  }
+
+  // Test 3: aice.aice_students SELECT check
+  try {
+    const { error, count } = await supabase
+      .schema('aice')
+      .from('aice_students')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error) {
+      result.schemaAccess.aiceStudents = { success: true, count: count ?? 0 };
+    } else {
+      result.schemaAccess.aiceStudents = {
+        success: false,
+        error: `[${error.code}] ${error.message}`
+      };
+    }
+  } catch (e: any) {
+    result.schemaAccess.aiceStudents = { success: false, error: e?.message || String(e) };
+  }
+
+  // Add SQL Guidance for RLS or schema issues
+  const hasError = !result.schemaAccess.aiceSubmissions.success || 
+                   !result.schemaAccess.aiceExams.success || 
+                   !result.schemaAccess.aiceStudents.success;
+
+  if (hasError) {
+    result.sqlGuidance.push(
+      '-- Supabase SQL Editor에서 실행할 권한 및 RLS 설정 쿼리:',
+      'GRANT USAGE ON SCHEMA aice TO anon, authenticated, service_role;',
+      'GRANT ALL ON ALL TABLES IN SCHEMA aice TO anon, authenticated, service_role;',
+      'ALTER TABLE aice.aice_submissions ENABLE ROW LEVEL SECURITY;',
+      'CREATE POLICY "Allow public insert to aice_submissions" ON aice.aice_submissions FOR INSERT TO anon, authenticated WITH CHECK (true);',
+      'CREATE POLICY "Allow public select from aice_submissions" ON aice.aice_submissions FOR SELECT TO anon, authenticated USING (true);'
+    );
+  }
+
+  return result;
 }
