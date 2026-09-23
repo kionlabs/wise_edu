@@ -8,6 +8,7 @@ export interface Exam {
   created_at: string;
   overview?: string;
   is_result_released?: boolean;
+  csv_url?: string;
 }
 
 export interface Problem {

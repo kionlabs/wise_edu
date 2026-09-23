@@ -1733,7 +1733,8 @@ export async function fetchExamById(examId: string): Promise<Exam | null> {
         }
         return {
           ...data,
-          overview: useOverview || mock?.overview || data.overview
+          overview: useOverview || mock?.overview || data.overview,
+          csv_url: data.csv_url || mock?.csv_url
         } as Exam;
       }
     } catch (e) {
@@ -2084,19 +2085,49 @@ export async function uploadCsvDataset(file: File): Promise<string> {
 }
 
 export async function updateExamCsvUrl(examId: string, csvUrl: string): Promise<boolean> {
+  let updated = false;
   if (supabase) {
+    // 1. DB aice.aice_exams 테이블의 csv_url 컬럼 업데이트
     try {
-      await supabase
+      const { error: err1 } = await supabase
+        .schema('aice')
+        .from('aice_exams')
+        .update({ csv_url: csvUrl })
+        .eq('id', examId);
+      if (!err1) {
+        console.log(`✅ [updateExamCsvUrl] aice.aice_exams DB 테이블의 csv_url 업데이트 성공 ('${examId}'):`, csvUrl);
+        updated = true;
+      } else {
+        console.warn('⚠️ [updateExamCsvUrl] aice.aice_exams DB 업데이트 에러:', err1);
+      }
+    } catch (e) {
+      console.warn('⚠️ [updateExamCsvUrl] aice.aice_exams DB 업데이트 예외:', e);
+    }
+
+    // 2. DB aice.aice_problems 테이블 문제들의 csv_url 컬럼 일괄 업데이트
+    try {
+      const { error: err2 } = await supabase
         .schema('aice')
         .from('aice_problems')
         .update({ csv_url: csvUrl })
         .eq('exam_id', examId);
-      return true;
+      if (!err2) {
+        console.log(`✅ [updateExamCsvUrl] aice.aice_problems DB 문제들의 csv_url 업데이트 성공 ('${examId}'):`, csvUrl);
+        updated = true;
+      }
     } catch (e) {
-      console.warn('Supabase updateExamCsvUrl error:', e);
+      console.warn('⚠️ [updateExamCsvUrl] aice.aice_problems DB 업데이트 예외:', e);
     }
   }
-  return false;
+
+  const localExams = getLocalExams();
+  const found = localExams.find(e => e.id === examId);
+  if (found) {
+    found.csv_url = csvUrl;
+    saveLocalExam(found);
+  }
+
+  return updated;
 }
 
 async function ensureExamExists(examId: string) {

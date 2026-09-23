@@ -174,16 +174,20 @@ export default function ExamPage({ params }: ExamPageProps) {
   }
 
   const answeredCount = Object.keys(answers).filter(k => Boolean(answers[k])).length;
-  const datasetCsvUrl = problems.find(p => p.csv_url)?.csv_url || '/sample_data/customer_data.csv';
+  // 1순위: DB (aice_exams.csv_url 또는 aice_problems.csv_url)에 저장된 진짜 Supabase Storage 퍼블릭 URL 최우선 바인딩
+  const rawDbCsvUrl = 
+    (exam?.csv_url && exam.csv_url.trim().length > 0 ? exam.csv_url.trim() : null) || 
+    (problems.find(p => p.csv_url && p.csv_url.trim().length > 0)?.csv_url?.trim() || null);
 
   const smartDefaultName = (() => {
     const title = (exam?.title || '').toLowerCase();
-    if (title.includes('심장병') || title.includes('heart')) return 'heart_disease.csv';
-    if (title.includes('자동차') || title.includes('car')) return 'car_prices.csv';
+    if (title.includes('심장병') || title.includes('heart')) return 'heart_nan.csv';
+    if (title.includes('자동차') || title.includes('car')) return 'housing_prices.csv';
     if (title.includes('와인') || title.includes('wine')) return 'wine_quality.csv';
     return 'customer_data.csv';
   })();
 
+  const datasetCsvUrl = rawDbCsvUrl || `/sample_data/${smartDefaultName}`;
   const downloadFileName = getFileNameFromUrl(datasetCsvUrl, smartDefaultName);
 
   // CSV 원본 파일명 및 원본 바이너리 그대로 학생 단말에 다운로드하는 핸들러
